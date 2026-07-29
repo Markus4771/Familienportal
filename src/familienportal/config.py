@@ -27,12 +27,11 @@ class Settings(BaseSettings):
     trusted_proxies: Annotated[list[str], NoDecode] = ["127.0.0.1"]
     secure_cookies: bool = False
     session_secret_key: str = "development-only-change-me"
+    session_max_age_seconds: int = 43200
 
     @field_validator("trusted_hosts", "trusted_proxies", mode="before")
     @classmethod
     def split_comma_separated_values(cls, value: object) -> object:
-        """Accept comma-separated lists from systemd environment files."""
-
         if isinstance(value, str):
             return [item.strip() for item in value.split(",") if item.strip()]
         return value
@@ -44,9 +43,11 @@ class Settings(BaseSettings):
 
     @property
     def forwarded_allow_ips(self) -> str:
-        """Return the Uvicorn-compatible trusted proxy list."""
-
         return ",".join(self.trusted_proxies)
+
+    @property
+    def database_backend(self) -> str:
+        return self.database_url.split(":", 1)[0]
 
 
 @lru_cache
