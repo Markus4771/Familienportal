@@ -1,0 +1,24 @@
+[Unit]
+Description=Familienportal
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=familienportal
+Group=familienportal
+WorkingDirectory=/opt/familienportal
+EnvironmentFile=/etc/familienportal/familienportal.env
+ExecStart=/opt/familienportal/.venv/bin/uvicorn familienportal.main:app --host ${FAMILIENPORTAL_BIND_HOST} --port ${FAMILIENPORTAL_BIND_PORT} --proxy-headers --forwarded-allow-ips ${FAMILIENPORTAL_TRUSTED_PROXIES}
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/familienportal
+
+[Install]
+WantedBy=multi-user.target
