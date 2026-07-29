@@ -9,6 +9,9 @@
 - Profile Kleinfamilie und Großfamilie
 - Modul- und Connector-Verträge
 - Testbasis
+- Debian als verbindliche Zielplattform
+- Betrieb hinter vorhandenem Nginx
+- getrennte Dienste für Familienportal, Nextcloud und Mailcow
 
 ## Phase 0.2 – Benutzer und Rechte
 
@@ -43,6 +46,7 @@
 - WebDAV
 - Freigaben
 - Kalender und Kontakte
+- unabhängige Installation und Sicherung
 
 ## Phase 0.6 – Mailcow
 
@@ -52,15 +56,22 @@
 - Quotas
 - Passwortänderung
 - Webmail-Verknüpfung
+- unabhängige Installation und Sicherung
 
-## Phase 0.7 – Betrieb
+## Phase 0.7 – Debian-Betrieb
 
+- systemd-Dienst für das Familienportal
+- Betrieb unter eigenem Linux-Systembenutzer
+- lokale Bindung hinter Nginx
+- produktive Nginx-Beispielkonfiguration
 - Debian-Paket
-- Docker-Deployment
+- optional eigener APT-Updatekanal
+- Installations- und Einrichtungsassistent
+- Systemprüfung vor Installation und Update
 - Backup und Wiederherstellung
-- Updatekonzept
+- Updatekonzept für getrennte Dienste
 - Administrations- und Benutzerhandbuch
 
 ## Version 1.0
 
-Stabile Plattform mit Kleinfamilien- und Großfamilienprofil, Modulverwaltung, Supportmodul, Nachrichtenportal, Kleinanzeigen sowie produktionsreifen Nextcloud- und Mailcow-Connectoren.
+Stabile Debian-Plattform mit Kleinfamilien- und Großfamilienprofil, Modulverwaltung, Supportmodul, Nachrichtenportal, Kleinanzeigen sowie produktionsreifen Nextcloud- und Mailcow-Connectoren. Das Familienportal läuft als eigener Dienst hinter Nginx; Nextcloud und Mailcow bleiben technisch und betrieblich getrennt.
