@@ -1,7 +1,8 @@
 from functools import lru_cache
+from typing import Annotated
 
 from pydantic import field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -22,8 +23,8 @@ class Settings(BaseSettings):
     public_url: str = "http://localhost:8000"
     bind_host: str = "127.0.0.1"
     bind_port: int = 8000
-    trusted_hosts: list[str] = ["localhost", "127.0.0.1"]
-    trusted_proxies: list[str] = ["127.0.0.1"]
+    trusted_hosts: Annotated[list[str], NoDecode] = ["localhost", "127.0.0.1"]
+    trusted_proxies: Annotated[list[str], NoDecode] = ["127.0.0.1"]
     secure_cookies: bool = False
     session_secret_key: str = "development-only-change-me"
 
