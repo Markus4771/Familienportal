@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Dashboard · Familienportal{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+  <div><p class="text-uppercase small fw-semibold text-primary mb-1">{{ family.name }}</p><h1 class="h2 mb-1">Hallo {{ user.display_name }}</h1><p class="text-secondary mb-0">Deine zentrale Familienübersicht.</p></div>
+  <span class="badge rounded-pill text-bg-light border px-3 py-2">{% if family.profile == 'extended_family' %}Großfamilie{% else %}Kleinfamilie{% endif %}</span>
+</div>
+<div class="row g-3 mb-4">
+  <div class="col-md-4"><div class="card metric-card border-0 shadow-sm"><div class="card-body"><span class="metric-icon"><i class="bi bi-people"></i></span><div class="display-6 fw-semibold">{{ user_count }}</div><div class="text-secondary">Familienmitglieder</div></div></div></div>
+  <div class="col-md-4"><div class="card metric-card border-0 shadow-sm"><div class="card-body"><span class="metric-icon"><i class="bi bi-houses"></i></span><div class="display-6 fw-semibold">{{ household_count }}</div><div class="text-secondary">Haushalte</div></div></div></div>
+  <div class="col-md-4"><div class="card metric-card border-0 shadow-sm"><div class="card-body"><span class="metric-icon"><i class="bi bi-grid"></i></span><div class="display-6 fw-semibold">{{ modules|length }}</div><div class="text-secondary">Vorgesehene Module</div></div></div></div>
+</div>
+<div class="row g-4">
+  <div class="col-xl-8"><div class="d-flex justify-content-between align-items-center mb-3"><h2 class="h4 mb-0">Module</h2><span class="text-secondary small">Provisorische Übersicht</span></div>
+    <div class="row g-3">{% for module in modules %}<div class="col-sm-6 col-lg-4"><div class="card module-card h-100 border-0 shadow-sm"><div class="card-body"><div class="module-icon"><i class="bi {{ module.icon }}"></i></div><h3 class="h5 mt-3">{{ module.name }}</h3><p class="text-secondary small mb-0">{{ module.status }}</p></div></div></div>{% endfor %}</div>
+  </div>
+  <div class="col-xl-4">
+    <h2 class="h4 mb-3">Dienste</h2>
+    <div class="card border-0 shadow-sm mb-3"><div class="card-body"><div class="d-flex align-items-center gap-3"><span class="service-icon"><i class="bi bi-cloud"></i></span><div class="flex-grow-1"><strong>Nextcloud</strong><div class="small text-secondary">Noch nicht verbunden</div></div><span class="status-dot status-planned"></span></div></div></div>
+    <div class="card border-0 shadow-sm mb-3"><div class="card-body"><div class="d-flex align-items-center gap-3"><span class="service-icon"><i class="bi bi-envelope"></i></span><div class="flex-grow-1"><strong>Mailcow</strong><div class="small text-secondary">Noch nicht verbunden</div></div><span class="status-dot status-planned"></span></div></div></div>
+    <div class="card border-0 shadow-sm"><div class="card-body"><h3 class="h6">Schnellzugriff</h3>{% if is_admin %}<a href="/admin" class="btn btn-outline-primary w-100 mt-2"><i class="bi bi-gear me-2"></i>Familie verwalten</a>{% endif %}<a href="/docs" class="btn btn-outline-secondary w-100 mt-2"><i class="bi bi-code-slash me-2"></i>API-Dokumentation</a></div></div>
+  </div>
+</div>
+{% endblock %}
