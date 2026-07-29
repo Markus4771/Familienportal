@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "familienportal"
-version = "0.2.0.dev0"
+version = "0.2.1.dev0"
 description = "Modulare, selbst gehostete Familienplattform"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -14,6 +14,7 @@ dependencies = [
   "uvicorn[standard]>=0.35,<1.0",
   "pydantic-settings>=2.10,<3.0",
   "email-validator>=2.2,<3.0",
+  "python-multipart>=0.0.20,<1.0",
   "sqlalchemy>=2.0,<3.0",
   "alembic>=1.16,<2.0",
   "psycopg[binary]>=3.2,<4.0",
@@ -32,6 +33,7 @@ dev = [
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/familienportal"]
+artifacts = ["src/familienportal/templates/**", "src/familienportal/static/**"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
