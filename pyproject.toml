@@ -1,0 +1,48 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "familienportal"
+version = "0.1.0.dev0"
+description = "Modulare, selbst gehostete Familienplattform"
+readme = "README.md"
+requires-python = ">=3.12"
+authors = [{ name = "Familienportal-Projekt" }]
+dependencies = [
+  "fastapi>=0.116,<1.0",
+  "uvicorn[standard]>=0.35,<1.0",
+  "pydantic-settings>=2.10,<3.0",
+  "sqlalchemy>=2.0,<3.0",
+  "alembic>=1.16,<2.0",
+  "psycopg[binary]>=3.2,<4.0",
+  "jinja2>=3.1,<4.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "httpx>=0.28,<1.0",
+  "pytest>=8.4,<9.0",
+  "pytest-cov>=6.2,<7.0",
+  "ruff>=0.12,<1.0",
+  "mypy>=1.17,<2.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/familienportal"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+packages = ["familienportal"]
