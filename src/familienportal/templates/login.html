@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Anmelden · Familienportal{% endblock %}
+{% block content %}
+<div class="row justify-content-center py-5"><div class="col-sm-10 col-md-6 col-lg-4">
+  <div class="text-center mb-4"><div class="hero-icon"><i class="bi bi-people-fill"></i></div><h1 class="h3 mt-3">Willkommen</h1><p class="text-secondary">Melde dich in deinem Familienportal an.</p></div>
+  <form method="post" class="card border-0 shadow-sm"><div class="card-body p-4">
+    <div class="mb-3"><label class="form-label">E-Mail-Adresse</label><input class="form-control form-control-lg" type="email" name="email" autocomplete="username" required autofocus></div>
+    <div class="mb-4"><label class="form-label">Passwort</label><input class="form-control form-control-lg" type="password" name="password" autocomplete="current-password" required></div>
+    <button class="btn btn-primary btn-lg w-100">Anmelden</button>
+  </div></form>
+</div></div>
+{% endblock %}
