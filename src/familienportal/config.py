@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     trusted_hosts: list[str] = ["localhost", "127.0.0.1"]
     trusted_proxies: list[str] = ["127.0.0.1"]
     secure_cookies: bool = False
+    session_secret_key: str = "development-only-change-me"
 
     @field_validator("trusted_hosts", "trusted_proxies", mode="before")
     @classmethod
