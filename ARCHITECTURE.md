@@ -9,17 +9,31 @@
 - Hintergrundaufgaben: zunächst interne Job-Schnittstelle; später optional Redis-Queue
 - API: versionierte REST-API unter `/api/v1`
 
+## Verbindliche Betriebsarchitektur
+
+- Hauptplattform: Debian Stable
+- Reverse Proxy: vorhandenes Nginx
+- Familienportal, Nextcloud und Mailcow werden als getrennte Dienste betrieben.
+- Jeder Dienst besitzt eigene Konfigurationen, Datenhaltung, Updates, Protokolle und Sicherungen.
+- Integrationen erfolgen ausschließlich über dokumentierte Connectoren, APIs und standardisierte Protokolle.
+- Das Familienportal bindet intern nur an eine lokale Adresse und wird ausschließlich über Nginx veröffentlicht.
+
+Details stehen in `DEPLOYMENT.md`.
+
 ## Schichten
 
 ```text
-Web/PWA
-  -> FastAPI-Anwendung
-     -> Core-Dienste
-     -> Modul-API
-     -> Connector-API
-        -> PostgreSQL
-        -> Nextcloud
-        -> Mailcow
+Browser / PWA
+    |
+  Nginx
+    |
+FastAPI-Anwendung
+    -> Core-Dienste
+    -> Modul-API
+    -> Connector-API
+       -> PostgreSQL
+       -> Nextcloud (getrennter Dienst)
+       -> Mailcow (getrennter Dienst)
 ```
 
 ## Core
@@ -75,6 +89,8 @@ Spätere Connectoren:
 
 PostgreSQL speichert Benutzer, Rechte, Moduleinstellungen, Metadaten und Auditdaten. Cloud-Dateien werden nicht als große Binärdaten in PostgreSQL abgelegt. Sie verbleiben in Nextcloud oder einem angebundenen Dateispeicher.
 
+Jeder externe Dienst verwendet seine eigene Datenbank und seine eigenen Speicherbereiche. Direkte Datenbankzugriffe zwischen Familienportal, Nextcloud und Mailcow sind nicht zulässig.
+
 ## Sicherheit
 
 - geringstmögliche Rechte
@@ -84,6 +100,9 @@ PostgreSQL speichert Benutzer, Rechte, Moduleinstellungen, Metadaten und Auditda
 - Auditprotokoll für administrative Aktionen
 - signierbare Module als spätere Ausbaustufe
 - Schutz vor unsicheren Modulabhängigkeiten
+- PostgreSQL nicht öffentlich erreichbar
+- Connectorzugriffe ausschließlich verschlüsselt
+- getrennte Dienstkonten und API-Schlüssel je Integration
 
 ## Profile
 
