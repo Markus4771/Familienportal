@@ -1,4 +1,6 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from starlette.middleware.sessions import SessionMiddleware
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from familienportal import __version__
 from familienportal.config import get_settings
@@ -9,6 +11,17 @@ app = FastAPI(
     title=settings.app_name,
     version=__version__,
     debug=settings.debug,
+)
+
+app.add_middleware(
+    TrustedHostMiddleware,
+    allowed_hosts=settings.trusted_hosts,
+)
+app.add_middleware(
+    SessionMiddleware,
+    secret_key="development-only-change-before-login-module",
+    https_only=settings.secure_cookies,
+    same_site="lax",
 )
 
 
@@ -22,6 +35,20 @@ async def health() -> dict[str, str]:
         "version": __version__,
         "environment": settings.environment,
         "profile": settings.default_profile,
+    }
+
+
+@app.get("/api/v1/system/runtime", tags=["system"])
+async def runtime(request: Request) -> dict[str, object]:
+    """Expose non-secret runtime information for proxy diagnostics."""
+
+    return {
+        "public_url": settings.public_url,
+        "request_scheme": request.url.scheme,
+        "request_host": request.url.hostname,
+        "client": request.client.host if request.client else None,
+        "secure_cookies": settings.secure_cookies,
+        "trusted_hosts": settings.trusted_hosts,
     }
 
 
