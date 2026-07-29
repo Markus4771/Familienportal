@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "familienportal"
-version = "0.1.0.dev0"
+version = "0.1.1.dev0"
 description = "Modulare, selbst gehostete Familienplattform"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -17,6 +17,7 @@ dependencies = [
   "alembic>=1.16,<2.0",
   "psycopg[binary]>=3.2,<4.0",
   "jinja2>=3.1,<4.0",
+  "itsdangerous>=2.2,<3.0",
 ]
 
 [project.optional-dependencies]
