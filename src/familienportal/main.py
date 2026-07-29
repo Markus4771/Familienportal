@@ -1,4 +1,7 @@
+from pathlib import Path
+
 from fastapi import FastAPI, Request
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from starlette.middleware.sessions import SessionMiddleware
@@ -8,8 +11,10 @@ from familienportal import __version__
 from familienportal.api import router as api_router
 from familienportal.config import get_settings
 from familienportal.database import engine
+from familienportal.web import router as web_router
 
 settings = get_settings()
+package_dir = Path(__file__).resolve().parent
 
 app = FastAPI(
     title=settings.app_name,
@@ -28,6 +33,8 @@ app.add_middleware(
     same_site="lax",
     max_age=settings.session_max_age_seconds,
 )
+app.mount("/static", StaticFiles(directory=package_dir / "static"), name="static")
+app.include_router(web_router)
 app.include_router(api_router)
 
 
