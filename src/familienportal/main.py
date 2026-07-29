@@ -19,7 +19,7 @@ app.add_middleware(
 )
 app.add_middleware(
     SessionMiddleware,
-    secret_key="development-only-change-before-login-module",
+    secret_key=settings.session_secret_key,
     https_only=settings.secure_cookies,
     same_site="lax",
 )
