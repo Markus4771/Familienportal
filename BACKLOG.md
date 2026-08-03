@@ -113,3 +113,21 @@ Prioritäten: `Muss`, `Soll`, `Kann`.
 | FP-094 | Deutsche Dokumentation | Muss | In Arbeit |
 | FP-095 | Mehrsprachigkeit vorbereiten | Soll | Geplant |
 | FP-096 | PWA für Smartphone und Tablet | Soll | Geplant |
+
+## Epic FP-E10 – Zwei-Faktor-Authentifizierung
+
+| ID | Anforderung | Priorität | Status |
+|---|---|---|---|
+| FP-100 | TOTP-basierte Zwei-Faktor-Authentifizierung mit Authenticator-Apps | Muss | Geplant |
+| FP-101 | QR-Code und manueller Einrichtungsschlüssel | Muss | Geplant |
+| FP-102 | Einmalige Wiederherstellungscodes erzeugen und sicher speichern | Muss | Geplant |
+| FP-103 | Zwei-Faktor-Authentifizierung für Administratoren verpflichtend konfigurierbar machen | Muss | Geplant |
+| FP-104 | Zwei-Faktor-Authentifizierung pro Benutzer aktivieren und deaktivieren | Muss | Geplant |
+| FP-105 | Bestätigung durch Passwort und zweiten Faktor vor sicherheitskritischen Änderungen | Muss | Geplant |
+| FP-106 | Fehlversuche begrenzen und zeitweise Kontosperre einführen | Muss | Geplant |
+| FP-107 | Aktivierung, Deaktivierung und Wiederherstellung im Auditprotokoll erfassen | Muss | Geplant |
+| FP-108 | Gerätebezeichnung und mehrere TOTP-Geräte prüfen | Soll | Idee |
+| FP-109 | WebAuthn/FIDO2 mit Sicherheitsschlüsseln und Passkeys unterstützen | Soll | Idee |
+| FP-110 | Notfall-Zurücksetzung durch Administrator mit zusätzlicher Bestätigung | Soll | Geplant |
+| FP-111 | 2FA-Richtlinien je Rolle und Familienbereich | Soll | Geplant |
+| FP-112 | Zentrale 2FA-/SSO-Strategie für Nextcloud, Mailcow und Gramps Web prüfen | Soll | Geplant |
