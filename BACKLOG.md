@@ -131,3 +131,22 @@ Prioritäten: `Muss`, `Soll`, `Kann`.
 | FP-110 | Notfall-Zurücksetzung durch Administrator mit zusätzlicher Bestätigung | Soll | Geplant |
 | FP-111 | 2FA-Richtlinien je Rolle und Familienbereich | Soll | Geplant |
 | FP-112 | Zentrale 2FA-/SSO-Strategie für Nextcloud, Mailcow und Gramps Web prüfen | Soll | Geplant |
+
+## Epic FP-E11 – Passwort-Zurücksetzung per E-Mail
+
+| ID | Anforderung | Priorität | Status |
+|---|---|---|---|
+| FP-120 | Funktion „Passwort vergessen“ auf der Anmeldeseite | Muss | Geplant |
+| FP-121 | Sicheren, zufälligen Einmal-Token für die Passwort-Zurücksetzung erzeugen | Muss | Geplant |
+| FP-122 | Token nur gehasht speichern und nach einmaliger Verwendung ungültig machen | Muss | Geplant |
+| FP-123 | Ablaufzeit für Zurücksetzungslinks konfigurierbar machen | Muss | Geplant |
+| FP-124 | Versand des Zurücksetzungslinks über konfigurierbaren SMTP-Server | Muss | Geplant |
+| FP-125 | Mailcow als bevorzugten SMTP-Dienst des Familienportals unterstützen | Muss | Geplant |
+| FP-126 | Einheitliche Antwort anzeigen, unabhängig davon, ob ein Benutzerkonto existiert | Muss | Geplant |
+| FP-127 | Anfragen begrenzen und Missbrauchsschutz pro IP-Adresse und Konto einführen | Muss | Geplant |
+| FP-128 | Nach erfolgreicher Zurücksetzung alle bestehenden Sitzungen des Benutzers beenden | Muss | Geplant |
+| FP-129 | Passwortänderung und Zurücksetzung im Auditprotokoll erfassen | Muss | Geplant |
+| FP-130 | Benutzer nach erfolgreicher Passwortänderung per E-Mail informieren | Soll | Geplant |
+| FP-131 | Bei aktivierter 2FA den zweiten Faktor oder Wiederherstellungscode berücksichtigen | Muss | Geplant |
+| FP-132 | Administrativen Passwort-Reset mit erzwungener Passwortänderung beim nächsten Login ermöglichen | Soll | Geplant |
+| FP-133 | E-Mail-Vorlagen für Passwort-Zurücksetzung und Sicherheitsbenachrichtigung | Soll | Geplant |
