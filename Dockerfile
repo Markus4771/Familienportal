@@ -8,13 +8,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Install python dependencies
-COPY pyproject.toml .
-RUN pip install --no-cache-dir -e .
-
-# Copy source code
+COPY pyproject.toml ./
 COPY src/ ./src/
 COPY migrations/ ./migrations/
-COPY alembic.ini .
+COPY alembic.ini ./
+RUN pip install --no-cache-dir -e .
 
 # Expose port
 EXPOSE 8000
