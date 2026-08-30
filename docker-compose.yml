@@ -1,0 +1,33 @@
+services:
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - FAMILIENPORTAL_ENVIRONMENT=development
+      - FAMILIENPORTAL_DEBUG=true
+      - FAMILIENPORTAL_DATABASE_URL=postgresql+psycopg://familienportal:familienportal@db:5432/familienportal
+      - FAMILIENPORTAL_PUBLIC_URL=http://localhost:8000
+      - FAMILIENPORTAL_BIND_HOST=0.0.0.0
+      - FAMILIENPORTAL_BIND_PORT=8000
+      - FAMILIENPORTAL_TRUSTED_HOSTS=*
+      - FAMILIENPORTAL_SECURE_COOKIES=false
+      - FAMILIENPORTAL_SESSION_SECRET_KEY=dev-secret-key-change-me
+    depends_on:
+      - db
+    volumes:
+      - ./src:/app/src
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=familienportal
+      - POSTGRES_PASSWORD=familienportal
+      - POSTGRES_DB=familienportal
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
