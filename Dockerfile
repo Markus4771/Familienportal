@@ -12,7 +12,7 @@ COPY pyproject.toml ./
 COPY src/ ./src/
 COPY migrations/ ./migrations/
 COPY alembic.ini ./
-RUN pip install --no-cache-dir -e .
+RUN pip install --no-cache-dir .
 
 # Expose port
 EXPOSE 8000
