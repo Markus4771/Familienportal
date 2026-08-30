@@ -37,7 +37,7 @@ def _is_admin(user: User) -> bool:
 
 
 def _context(request: Request, user: User | None = None, **extra: object) -> dict[str, object]:
-    return {"request": request, "user": user, "is_admin": bool(user and _is_admin(user)), **extra}
+    return {"user": user, "is_admin": bool(user and _is_admin(user)), **extra}
 
 
 @router.get("/", response_class=HTMLResponse)
@@ -55,7 +55,7 @@ def index(request: Request, db: Session = Depends(get_db)):
 def setup_page(request: Request, db: Session = Depends(get_db)):
     if (db.scalar(select(func.count()).select_from(User)) or 0) > 0:
         return RedirectResponse("/login", status_code=303)
-    return templates.TemplateResponse("setup.html", _context(request))
+    return templates.TemplateResponse(request=request, name="setup.html", context=_context(request))
 
 
 @router.post("/setup")
@@ -73,7 +73,7 @@ def setup_submit(
     if (db.scalar(select(func.count()).select_from(User)) or 0) > 0:
         return RedirectResponse("/login", status_code=303)
     if len(admin_password) < 10:
-        return templates.TemplateResponse("setup.html", _context(request, error="Das Passwort muss mindestens 10 Zeichen lang sein."), status_code=400)
+        return templates.TemplateResponse(request=request, name="setup.html", context=_context(request, error="Das Passwort muss mindestens 10 Zeichen lang sein."), status_code=400)
     family = Family(name=family_name.strip(), slug=family_slug.strip().lower(), profile=profile)
     household = Household(name=household_name.strip(), family=family)
     db.add_all([family, household])
@@ -94,14 +94,14 @@ def setup_submit(
 def login_page(request: Request, db: Session = Depends(get_db)):
     if _user_from_session(request, db):
         return RedirectResponse("/dashboard", status_code=303)
-    return templates.TemplateResponse("login.html", _context(request))
+    return templates.TemplateResponse(request=request, name="login.html", context=_context(request))
 
 
 @router.post("/login")
 def login_submit(request: Request, email: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
     user = db.scalar(select(User).where(func.lower(User.email) == email.strip().lower()))
     if not user or user.status != UserStatus.ACTIVE.value or not verify_password(password, user.password_hash):
-        return templates.TemplateResponse("login.html", _context(request, error="E-Mail-Adresse oder Passwort ist falsch."), status_code=401)
+        return templates.TemplateResponse(request=request, name="login.html", context=_context(request, error="E-Mail-Adresse oder Passwort ist falsch."), status_code=401)
     request.session.clear()
     request.session["user_id"] = str(user.id)
     audit(db, "auth.login", actor=user, target_type="user", target_id=str(user.id))
@@ -131,7 +131,7 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
         {"name": "Support", "icon": "bi-life-preserver", "status": "In Vorbereitung"},
         {"name": "Kalender", "icon": "bi-calendar3", "status": "Geplant"},
     ]
-    return templates.TemplateResponse("dashboard.html", _context(request, user, family=family, user_count=user_count, household_count=household_count, modules=modules))
+    return templates.TemplateResponse(request=request, name="dashboard.html", context=_context(request, user, family=family, user_count=user_count, household_count=household_count, modules=modules))
 
 
 @router.get("/admin", response_class=HTMLResponse)
@@ -144,7 +144,7 @@ def admin_page(request: Request, db: Session = Depends(get_db)):
     users = db.scalars(select(User).where(User.family_id == user.family_id).order_by(User.display_name)).unique().all()
     households = db.scalars(select(Household).where(Household.family_id == user.family_id).order_by(Household.name)).all()
     roles = db.scalars(select(Role).where(Role.family_id == user.family_id).order_by(Role.name)).all()
-    return templates.TemplateResponse("admin.html", _context(request, user, users=users, households=households, roles=roles))
+    return templates.TemplateResponse(request=request, name="admin.html", context=_context(request, user, users=users, households=households, roles=roles))
 
 
 @router.post("/admin/households")
