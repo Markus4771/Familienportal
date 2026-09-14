@@ -1,6 +1,7 @@
 from familienportal.extensions import BUILTIN_MODULES
 from familienportal.gramps_api import router as gramps_api_router
 from familienportal.gramps_extra_web import router as gramps_extra_router
+from familienportal.gramps_person_web import router as gramps_person_router
 from familienportal.gramps_transfer_web import router as gramps_transfer_router
 from familienportal.gramps_web import router as gramps_router
 from familienportal.main import app
@@ -13,6 +14,7 @@ app.include_router(gramps_router)
 app.include_router(gramps_extra_router)
 app.include_router(gramps_api_router)
 app.include_router(gramps_transfer_router)
+app.include_router(gramps_person_router)
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(CsrfOriginMiddleware)
 app.add_middleware(RoleMfaPolicyMiddleware)
