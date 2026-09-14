@@ -12,6 +12,11 @@ router = APIRouter(include_in_schema=False)
 templates = Jinja2Templates(directory="src/familienportal/templates")
 
 
+@router.get("/modules/genealogy")
+def genealogy_module_redirect():
+    return RedirectResponse("/genealogy", status_code=303)
+
+
 @router.get("/genealogy/families", response_class=HTMLResponse)
 def family_search(request: Request, q: str = Query(""), db: Session = Depends(get_db)):
     user = _user_from_session(request, db)
