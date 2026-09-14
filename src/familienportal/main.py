@@ -10,8 +10,10 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 from familienportal import __version__
 from familienportal.api import router as api_router
 from familienportal.calendar_caldav_web import router as calendar_caldav_router
+from familienportal.calendar_conflicts_web import router as calendar_conflicts_router
 from familienportal.calendar_import_web import router as calendar_import_router
 from familienportal.calendar_sync_api import router as calendar_sync_api_router
+from familienportal.calendar_ui_web import router as calendar_ui_router
 from familienportal.calendar_web import router as calendar_router
 from familienportal.config import get_settings
 from familienportal.database import engine
@@ -33,6 +35,8 @@ app.include_router(platform_router)
 app.include_router(nextcloud_router)
 app.include_router(nextcloud_management_router)
 app.include_router(calendar_router)
+app.include_router(calendar_ui_router)
+app.include_router(calendar_conflicts_router)
 app.include_router(calendar_caldav_router)
 app.include_router(calendar_import_router)
 app.include_router(calendar_sync_api_router)
@@ -68,6 +72,6 @@ async def capabilities() -> dict[str, object]:
         "core": ["families", "households", "users", "roles", "sessions", "audit", "platform_management"],
         "connectors": ["nextcloud", "mailcow", "gramps", "homeassistant", "paperless", "immich"],
         "nextcloud": ["health", "users", "user_mapping", "groups", "group_mapping", "shares", "family_folders", "webdav", "caldav", "carddav", "diagnostics"],
-        "calendar": ["personal", "family", "birthdays", "events", "recurrence", "reminders", "ics_import", "ics_export", "caldav_bindings", "caldav_pull", "caldav_push", "caldav_delete", "caldav_conflicts", "sync_tokens", "etags"],
+        "calendar": ["personal", "family", "birthdays", "events", "recurrence", "reminders", "ics_import", "ics_export", "month_view", "week_view", "day_view", "calendar_colors", "filters", "event_edit", "event_move", "caldav_bindings", "caldav_pull", "caldav_push", "caldav_delete", "caldav_conflicts", "conflict_resolution", "sync_tokens", "etags"],
         "modules": ["calendar", "news", "marketplace", "support", "genealogy", "documents"],
     }
