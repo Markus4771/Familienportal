@@ -29,6 +29,16 @@ class Settings(BaseSettings):
     session_secret_key: str = "development-only-change-me"
     session_max_age_seconds: int = 43200
 
+    worker_interval_seconds: int = 60
+    calendar_sync_interval_minutes: int = 5
+
+    smtp_host: str | None = None
+    smtp_port: int = 587
+    smtp_username: str | None = None
+    smtp_password: str | None = None
+    smtp_from: str | None = None
+    smtp_starttls: bool = True
+
     @field_validator("trusted_hosts", "trusted_proxies", mode="before")
     @classmethod
     def split_comma_separated_values(cls, value: object) -> object:
