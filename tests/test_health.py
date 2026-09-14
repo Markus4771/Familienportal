@@ -4,7 +4,7 @@ from familienportal.main import app
 
 
 def test_health() -> None:
-    client = TestClient(app)
+    client = TestClient(app, base_url="http://localhost")
 
     response = client.get("/health")
 
