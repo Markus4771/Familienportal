@@ -3,6 +3,7 @@
 {% block content %}
 <h1 class="h2 mb-3">Ahnenforschung</h1>
 <p class="text-secondary">Gramps Web durchsuchen und Familienbezüge anzeigen.</p>
+<p><a href="/genealogy/families">Familien suchen</a> · <a href="/genealogy/dates">Geburtstage und Gedenktage</a></p>
 {% if is_admin %}<p><a class="btn btn-outline-secondary" href="/platform/gramps">Gramps Web verwalten</a></p>{% endif %}
 {% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
 {% if not state or not state.enabled %}<div class="alert alert-warning">Gramps Web ist noch nicht aktiviert.</div>{% else %}
