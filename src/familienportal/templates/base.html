@@ -13,10 +13,16 @@
   <div class="container-fluid px-4">
     <a class="navbar-brand fw-semibold" href="/dashboard"><i class="bi bi-people-fill me-2"></i>Familienportal</a>
     {% if user %}
-    <div class="d-flex align-items-center gap-3 text-white">
-      <span class="d-none d-md-inline">{{ user.display_name }}</span>
-      {% if is_admin %}<a href="/admin" class="btn btn-sm btn-outline-light"><i class="bi bi-gear me-1"></i>Verwaltung</a>{% endif %}
-      <form method="post" action="/logout"><button class="btn btn-sm btn-light">Abmelden</button></form>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#portalNav"><span class="navbar-toggler-icon"></span></button>
+    <div class="collapse navbar-collapse" id="portalNav">
+      <div class="navbar-nav me-auto ms-lg-3">
+        <a class="nav-link" href="/dashboard"><i class="bi bi-grid me-1"></i>Dashboard</a>
+        {% if is_admin %}<a class="nav-link" href="/platform"><i class="bi bi-boxes me-1"></i>Plattform</a><a class="nav-link" href="/admin"><i class="bi bi-people-gear me-1"></i>Benutzer</a><a class="nav-link" href="/admin/roles"><i class="bi bi-shield-lock me-1"></i>Rechte</a><a class="nav-link" href="/settings"><i class="bi bi-sliders me-1"></i>Einstellungen</a>{% endif %}
+      </div>
+      <div class="d-flex align-items-center gap-3 text-white mt-3 mt-lg-0">
+        <span class="d-none d-md-inline">{{ user.display_name }}</span>
+        <form method="post" action="/logout"><button class="btn btn-sm btn-light">Abmelden</button></form>
+      </div>
     </div>
     {% endif %}
   </div>
@@ -25,7 +31,7 @@
   {% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
   {% block content %}{% endblock %}
 </main>
-<footer class="container-fluid px-4 pb-4 text-secondary small">Familienportal · provisorische Oberfläche</footer>
+<footer class="container-fluid px-4 pb-4 text-secondary small"><span>Familienportal</span><span class="mx-2">·</span><span>modulare Self-Hosting-Plattform</span></footer>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
