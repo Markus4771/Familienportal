@@ -70,6 +70,7 @@ for unit in \
 done
 
 install -o root -g root -m 0755 "$APP_DIR/deploy/familienportalctl" /usr/local/sbin/familienportalctl
+install -o root -g root -m 0755 "$APP_DIR/deploy/familienportal-release" /usr/local/sbin/familienportal-release
 
 systemctl daemon-reload
 systemctl enable familienportal.service
@@ -97,3 +98,4 @@ echo "Anwendung:     $APP_DIR"
 echo "Daten:         $DATA_DIR"
 echo "Backups:       $BACKUP_DIR"
 echo "Verwaltung:    familienportalctl status"
+echo "Updates:       familienportal-release check"
