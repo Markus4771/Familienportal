@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}Geburtstage und Gedenktage · Ahnenforschung{% endblock %}
+{% block content %}
+<h1 class="h2 mb-3">Geburtstage und Gedenktage</h1>
+<p><a href="/genealogy">Personensuche</a> · <a href="/genealogy/families">Familiensuche</a></p>
+<table class="table"><thead><tr><th>Person</th><th>Geburt</th><th>Tod</th></tr></thead><tbody>{% for item in rows %}<tr><td>{{ item.name }}</td><td>{{ item.birth or '-' }}</td><td>{{ item.death or '-' }}</td></tr>{% endfor %}</tbody></table>
+{% endblock %}
