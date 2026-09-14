@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}Kalenderkonflikte · Familienportal{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-start mb-4"><div><p class="text-uppercase small fw-semibold text-primary mb-1">CalDAV 0.5.2</p><h1 class="h2 mb-1">Synchronisationskonflikte</h1><p class="text-secondary mb-0">Wähle bewusst, welche Version bestehen bleiben soll.</p></div><a class="btn btn-outline-secondary" href="/calendar/view">Zur Kalenderansicht</a></div>
+{% if items %}<div class="row g-3">{% for item in items %}<div class="col-xl-6"><div class="card border-warning shadow-sm"><div class="card-body"><h2 class="h5">{{ item.event.title if item.event else 'Unbekannter Termin' }}</h2><p class="text-secondary small">{{ item.state.conflict_message }}</p><div class="d-flex gap-2"><button class="btn btn-primary" onclick="resolveConflict('{{ item.state.event_id }}','local')">Lokale Version behalten</button><button class="btn btn-outline-primary" onclick="resolveConflict('{{ item.state.event_id }}','remote')">Nextcloud übernehmen</button></div></div></div></div>{% endfor %}</div>{% else %}<div class="alert alert-success">Keine offenen Konflikte.</div>{% endif %}
+<script>async function resolveConflict(id,winner){const response=await fetch('/api/v1/calendar-sync/conflicts/'+id+'/'+winner,{method:'POST'});if(response.ok){location.reload();}else{alert('Konflikt konnte nicht aufgelöst werden.');}}</script>
+{% endblock %}
