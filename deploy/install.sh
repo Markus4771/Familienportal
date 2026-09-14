@@ -10,7 +10,7 @@ SOURCE_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 APP_DIR=/opt/familienportal
 CONFIG_DIR=/etc/familienportal
 DATA_DIR=/var/lib/familienportal
-SERVICE_FILE=/etc/systemd/system/familienportal.service
+SYSTEMD_DIR=/etc/systemd/system
 
 apt-get update
 apt-get install -y python3 python3-venv python3-pip postgresql-client curl
@@ -38,12 +38,23 @@ if [[ ! -f "$CONFIG_DIR/familienportal.env" ]]; then
   echo "Bitte Datenbank, Domain und Proxy-IP dort anpassen."
 fi
 
-install -o root -g root -m 0644 "$APP_DIR/deploy/systemd/familienportal.service" "$SERVICE_FILE"
+for unit in \
+  familienportal.service \
+  familienportal-calendar-sync.service \
+  familienportal-calendar-sync.timer \
+  familienportal-reminder-queue.service \
+  familienportal-reminder-queue.timer; do
+  install -o root -g root -m 0644 "$APP_DIR/deploy/systemd/$unit" "$SYSTEMD_DIR/$unit"
+done
+
 systemctl daemon-reload
 systemctl enable familienportal.service
+systemctl enable --now familienportal-calendar-sync.timer
+systemctl enable --now familienportal-reminder-queue.timer
 
 echo
 echo "Installation abgeschlossen."
 echo "1. $CONFIG_DIR/familienportal.env bearbeiten"
 echo "2. systemctl start familienportal"
 echo "3. curl http://127.0.0.1:8000/health"
+echo "4. systemctl list-timers 'familienportal-*'"
