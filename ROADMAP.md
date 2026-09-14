@@ -253,10 +253,26 @@
 - Migration 0012 für Gramps-Benutzerzuordnungen
 - Tests für Payload-Normalisierung, Suche und Lebensdaten
 
-### Nächste Gramps-Ausbaustufe 0.8.1
+## 0.8.1 – Gramps ↔ Kalender – umgesetzt
 
-- ausgewählte Gramps-Geburtstage/Gedenktage in Portal-Kalender synchronisieren
+- eigener Portal-Kalender `Familie & Ahnen`
+- Geburtstage aus Gramps Web automatisch als Ganztagstermine übernehmen
+- Gedenktage aus Gramps Web automatisch als Ganztagstermine übernehmen
+- stabiles Mapping über `external_uid` und `source=gramps`
+- idempotente Synchronisation ohne Dubletten
+- Änderungen an Namen und Lebensdaten aktualisieren bestehende Termine
+- entfernte Lebensdaten werden im Portal-Kalender soft-deleted
+- rollierendes Fenster für aktuelles Jahr plus zwei Folgejahre
+- Schaltjahrbehandlung für den 29. Februar
+- separater systemd Worker und 30-Minuten-Timer
+- Debian-Erstinstaller aktiviert den neuen Timer automatisch
+- Tests für Datumsnormalisierung, stabile UIDs und Geburtstags-/Gedenktagsgenerierung
+- keine zusätzliche Datenbankmigration erforderlich
+
+### Nächste Gramps-Ausbaustufe 0.8.2
+
 - komfortablere Personendetailseiten und Beziehungsdarstellung
+- Eltern, Kinder, Partner und Familienbeziehungen
 - Medien- und Dokument-Verknüpfungen
 - optional OIDC/SSO mit Gramps Web
 - Datenschutzregeln für lebende Personen weiter verfeinern
