@@ -1,3 +1,4 @@
+from familienportal.gramps_api import router as gramps_api_router
 from familienportal.gramps_extra_web import router as gramps_extra_router
 from familienportal.gramps_web import router as gramps_router
 from familienportal.main import app
@@ -6,6 +7,7 @@ from familienportal.security_http import CsrfOriginMiddleware, SecurityHeadersMi
 
 app.include_router(gramps_router)
 app.include_router(gramps_extra_router)
+app.include_router(gramps_api_router)
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(CsrfOriginMiddleware)
 app.add_middleware(RoleMfaPolicyMiddleware)
