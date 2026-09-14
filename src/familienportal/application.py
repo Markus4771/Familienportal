@@ -1,5 +1,7 @@
 from familienportal.main import app
+from familienportal.role_mfa_policy import RoleMfaPolicyMiddleware
 from familienportal.security_http import CsrfOriginMiddleware, SecurityHeadersMiddleware
 
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(CsrfOriginMiddleware)
+app.add_middleware(RoleMfaPolicyMiddleware)
