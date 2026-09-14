@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Zwei-Faktor-Anmeldung · Familienportal{% endblock %}
+{% block content %}
+<div class="row justify-content-center"><div class="col-md-6 col-lg-4"><div class="card border-0 shadow-sm"><div class="card-body p-4">
+<h1 class="h4 mb-3">Zwei-Faktor-Anmeldung</h1><p class="text-secondary">Code aus der Authenticator-App oder einen Recovery-Code eingeben.</p>
+{% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
+<form method="post" action="/mfa"><input class="form-control mb-3" name="code" autocomplete="one-time-code" inputmode="numeric" required autofocus><button class="btn btn-primary w-100">Anmelden</button></form>
+</div></div></div></div>
+{% endblock %}
