@@ -16,6 +16,8 @@ depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
+    op.add_column("calendar_events", sa.Column("deleted_at", sa.DateTime(timezone=True), nullable=True))
+    op.create_index("ix_calendar_events_deleted_at", "calendar_events", ["deleted_at"])
     op.create_table(
         "calendar_sync_bindings",
         sa.Column("id", sa.Uuid(), nullable=False),
@@ -36,7 +38,6 @@ def upgrade() -> None:
     )
     op.create_index("ix_calendar_sync_bindings_family_id", "calendar_sync_bindings", ["family_id"])
     op.create_index("ix_calendar_sync_bindings_calendar_id", "calendar_sync_bindings", ["calendar_id"])
-
     op.create_table(
         "calendar_event_sync_states",
         sa.Column("id", sa.Uuid(), nullable=False),
@@ -62,3 +63,5 @@ def upgrade() -> None:
 def downgrade() -> None:
     op.drop_table("calendar_event_sync_states")
     op.drop_table("calendar_sync_bindings")
+    op.drop_index("ix_calendar_events_deleted_at", table_name="calendar_events")
+    op.drop_column("calendar_events", "deleted_at")
