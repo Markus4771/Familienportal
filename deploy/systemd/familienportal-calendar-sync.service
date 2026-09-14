@@ -1,0 +1,16 @@
+[Unit]
+Description=Familienportal CalDAV synchronization
+After=network-online.target familienportal.service
+
+[Service]
+Type=oneshot
+User=familienportal
+Group=familienportal
+WorkingDirectory=/opt/familienportal
+EnvironmentFile=/etc/familienportal/familienportal.env
+ExecStart=/opt/familienportal/.venv/bin/python -c "from familienportal.calendar_sync_worker import run_once; run_once()"
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/familienportal
