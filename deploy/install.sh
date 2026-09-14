@@ -10,6 +10,7 @@ SOURCE_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 APP_DIR=/opt/familienportal
 CONFIG_DIR=/etc/familienportal
 DATA_DIR=/var/lib/familienportal
+BACKUP_DIR=/var/backups/familienportal
 SYSTEMD_DIR=/etc/systemd/system
 INSTALL_MODE=${FAMILIENPORTAL_INSTALL_MODE:-test}
 
@@ -19,13 +20,14 @@ if [[ "$INSTALL_MODE" != "test" && "$INSTALL_MODE" != "production" ]]; then
 fi
 
 apt-get update
-apt-get install -y python3 python3-venv python3-pip postgresql-client curl ca-certificates
+apt-get install -y python3 python3-venv python3-pip postgresql-client curl ca-certificates tar
 
 if ! id familienportal >/dev/null 2>&1; then
   useradd --system --home-dir "$DATA_DIR" --create-home --shell /usr/sbin/nologin familienportal
 fi
 
 install -d -o familienportal -g familienportal -m 0750 "$APP_DIR" "$CONFIG_DIR" "$DATA_DIR"
+install -d -o root -g familienportal -m 0750 "$BACKUP_DIR"
 cp -a "$SOURCE_DIR"/. "$APP_DIR"/
 rm -rf "$APP_DIR/.git" "$APP_DIR/.venv"
 chown -R familienportal:familienportal "$APP_DIR" "$DATA_DIR"
@@ -45,7 +47,7 @@ if [[ ! -f "$CONFIG_DIR/familienportal.env" ]]; then
     sed -i 's|^FAMILIENPORTAL_ENVIRONMENT=.*|FAMILIENPORTAL_ENVIRONMENT=development|' "$CONFIG_DIR/familienportal.env"
     sed -i 's|^FAMILIENPORTAL_DATABASE_URL=.*|FAMILIENPORTAL_DATABASE_URL=sqlite:////var/lib/familienportal/familienportal.db|' "$CONFIG_DIR/familienportal.env"
     sed -i 's|^FAMILIENPORTAL_PUBLIC_URL=.*|FAMILIENPORTAL_PUBLIC_URL=http://127.0.0.1:8000|' "$CONFIG_DIR/familienportal.env"
-    sed -i 's|^FAMILIENPORTAL_TRUSTED_HOSTS=.*|FAMILIENPORTAL_TRUSTED_HOSTS=localhost,127.0.0.1|' "$CONFIG_DIR/familienportal.env"
+    sed -i 's|^FAMILIENPORTAL_TRUSTED_HOSTS=.*|FAMILIENPORTAL_TRUSTED_HOSTS=localhost,127.0.0.1,testserver|' "$CONFIG_DIR/familienportal.env"
     sed -i 's|^FAMILIENPORTAL_TRUSTED_PROXIES=.*|FAMILIENPORTAL_TRUSTED_PROXIES=127.0.0.1|' "$CONFIG_DIR/familienportal.env"
     sed -i 's|^FAMILIENPORTAL_SECURE_COOKIES=.*|FAMILIENPORTAL_SECURE_COOKIES=false|' "$CONFIG_DIR/familienportal.env"
     sed -i 's|^FAMILIENPORTAL_WEBAUTHN_RP_ID=.*|FAMILIENPORTAL_WEBAUTHN_RP_ID=localhost|' "$CONFIG_DIR/familienportal.env"
@@ -66,6 +68,8 @@ for unit in \
   familienportal-security-cleanup.timer; do
   install -o root -g root -m 0644 "$APP_DIR/deploy/systemd/$unit" "$SYSTEMD_DIR/$unit"
 done
+
+install -o root -g root -m 0755 "$APP_DIR/deploy/familienportalctl" /usr/local/sbin/familienportalctl
 
 systemctl daemon-reload
 systemctl enable familienportal.service
@@ -91,3 +95,5 @@ fi
 echo "Konfiguration: $CONFIG_DIR/familienportal.env"
 echo "Anwendung:     $APP_DIR"
 echo "Daten:         $DATA_DIR"
+echo "Backups:       $BACKUP_DIR"
+echo "Verwaltung:    familienportalctl status"
