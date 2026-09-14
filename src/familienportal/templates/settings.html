@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Einstellungen · Familienportal{% endblock %}
+{% block content %}
+<div class="mb-4"><p class="text-uppercase small fw-semibold text-primary mb-1">Konfiguration</p><h1 class="h2">Familieneinstellungen</h1><p class="text-secondary">Zentrale Einstellungen für diese Portal-Instanz.</p></div>
+{% if request.query_params.get('saved') %}<div class="alert alert-success">Einstellungen wurden gespeichert.</div>{% endif %}
+<div class="row"><div class="col-xl-8"><div class="card border-0 shadow-sm"><div class="card-body p-4">
+<form method="post" action="/settings">
+  <div class="mb-3"><label class="form-label">Portalname</label><input class="form-control" name="portal_title" value="{{ settings.get('portal_title', family.name) }}"></div>
+  <div class="row g-3"><div class="col-md-6"><label class="form-label">Zeitzone</label><input class="form-control" name="timezone_name" value="{{ settings.get('timezone', 'Europe/Berlin') }}"></div><div class="col-md-6"><label class="form-label">Sprache</label><select class="form-select" name="language"><option value="de" selected>Deutsch</option><option value="en">English</option></select></div></div>
+  <hr class="my-4"><div class="d-flex gap-2"><button class="btn btn-primary"><i class="bi bi-check2 me-2"></i>Speichern</button><a href="/platform" class="btn btn-outline-secondary">Zur Plattform</a></div>
+</form>
+</div></div></div>
+<div class="col-xl-4 mt-3 mt-xl-0"><div class="card border-0 shadow-sm"><div class="card-body"><h2 class="h5">Familienprofil</h2><div class="small text-secondary mb-2">Profil</div><strong>{% if family.profile == 'extended_family' %}Großfamilie{% else %}Kleinfamilie{% endif %}</strong><hr><div class="small text-secondary mb-2">Technischer Schlüssel</div><code>{{ family.slug }}</code></div></div></div></div>
+{% endblock %}
