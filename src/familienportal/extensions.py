@@ -48,7 +48,7 @@ BUILTIN_MODULES: dict[str, dict[str, object]] = {
         "default": True,
         "menu": True,
         "permission": "calendar.read",
-        "route": "/modules/calendar",
+        "route": "/calendar",
     },
     "news": {
         "name": "Nachrichten",
