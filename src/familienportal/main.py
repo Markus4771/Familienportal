@@ -12,6 +12,7 @@ from familienportal.api import router as api_router
 from familienportal.config import get_settings
 from familienportal.database import engine
 from familienportal.module_web import router as module_router
+from familienportal.nextcloud_management_web import router as nextcloud_management_router
 from familienportal.nextcloud_web import router as nextcloud_router
 from familienportal.platform_web import router as platform_router
 from familienportal.web import router as web_router
@@ -26,6 +27,7 @@ app.mount("/static", StaticFiles(directory=package_dir / "static"), name="static
 app.include_router(web_router)
 app.include_router(platform_router)
 app.include_router(nextcloud_router)
+app.include_router(nextcloud_management_router)
 app.include_router(module_router)
 app.include_router(api_router)
 
@@ -57,6 +59,6 @@ async def capabilities() -> dict[str, object]:
         "extension_types": ["module", "connector"],
         "core": ["families", "households", "users", "roles", "sessions", "audit", "platform_management"],
         "connectors": ["nextcloud", "mailcow", "gramps", "homeassistant", "paperless", "immich"],
-        "nextcloud": ["health", "users", "groups", "shares", "webdav", "caldav", "carddav"],
+        "nextcloud": ["health", "users", "user_mapping", "groups", "group_mapping", "shares", "family_folders", "webdav", "caldav", "carddav", "diagnostics"],
         "modules": ["calendar", "news", "marketplace", "support", "genealogy", "documents"],
     }
