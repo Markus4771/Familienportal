@@ -29,6 +29,11 @@ class Settings(BaseSettings):
     session_secret_key: str = "development-only-change-me"
     session_max_age_seconds: int = 43200
 
+    security_encryption_key: str = "development-only-change-security-key"
+    password_reset_ttl_minutes: int = 30
+    mfa_issuer: str = "Familienportal"
+    require_admin_mfa: bool = False
+
     worker_interval_seconds: int = 60
     calendar_sync_interval_minutes: int = 5
 
