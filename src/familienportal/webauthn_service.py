@@ -11,7 +11,7 @@ from webauthn import (
     verify_registration_response,
 )
 from webauthn.helpers import base64url_to_bytes, bytes_to_base64url, options_to_json_dict
-from webauthn.helpers.structs import PublicKeyCredentialDescriptor, UserVerificationRequirement
+from webauthn.helpers.structs import AuthenticatorSelectionCriteria, PublicKeyCredentialDescriptor, UserVerificationRequirement
 
 from familienportal.auth_models import PasskeyCredential
 from familienportal.config import Settings
@@ -31,6 +31,7 @@ def registration_options(db: Session, user: User, settings: Settings) -> tuple[d
         user_name=user.email,
         user_display_name=user.display_name,
         exclude_credentials=[PublicKeyCredentialDescriptor(id=base64url_to_bytes(item.credential_id)) for item in existing],
+        authenticator_selection=AuthenticatorSelectionCriteria(user_verification=UserVerificationRequirement.REQUIRED),
     )
     return options_to_json_dict(options), bytes_to_base64url(options.challenge)
 
