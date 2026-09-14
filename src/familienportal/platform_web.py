@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from urllib.error import HTTPError, URLError
+from urllib.parse import urlparse
+from urllib.request import Request as UrlRequest, urlopen
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
@@ -34,7 +37,10 @@ def _admin(request: Request, db: Session) -> User:
 
 
 def _module_rows(db: Session, family_id: UUID) -> list[dict[str, object]]:
-    states = {item.module_key: item for item in db.scalars(select(ModuleState).where(ModuleState.family_id == family_id)).all()}
+    states = {
+        item.module_key: item
+        for item in db.scalars(select(ModuleState).where(ModuleState.family_id == family_id)).all()
+    }
     rows = []
     for key, definition in BUILTIN_MODULES.items():
         state = states.get(key)
@@ -43,19 +49,43 @@ def _module_rows(db: Session, family_id: UUID) -> list[dict[str, object]]:
 
 
 def _connector_rows(db: Session, family_id: UUID) -> list[dict[str, object]]:
-    states = {item.connector_key: item for item in db.scalars(select(ConnectorState).where(ConnectorState.family_id == family_id)).all()}
+    states = {
+        item.connector_key: item
+        for item in db.scalars(select(ConnectorState).where(ConnectorState.family_id == family_id)).all()
+    }
     rows = []
     for key, definition in BUILTIN_CONNECTORS.items():
         state = states.get(key)
-        rows.append({
-            "key": key,
-            **definition,
-            "enabled": bool(state and state.enabled),
-            "base_url": state.base_url if state else "",
-            "health_status": state.health_status if state else "not_checked",
-            "health_message": state.health_message if state else None,
-        })
+        rows.append(
+            {
+                "key": key,
+                **definition,
+                "enabled": bool(state and state.enabled),
+                "base_url": state.base_url if state else "",
+                "health_status": state.health_status if state else "not_checked",
+                "health_message": state.health_message if state else None,
+            }
+        )
     return rows
+
+
+def _probe_url(base_url: str) -> tuple[str, str]:
+    parsed = urlparse(base_url)
+    if parsed.scheme not in {"http", "https"} or not parsed.hostname:
+        return "error", "Ungültige URL. Erlaubt sind HTTP und HTTPS."
+    request = UrlRequest(base_url, method="HEAD", headers={"User-Agent": "Familienportal/0.3"})
+    try:
+        with urlopen(request, timeout=5) as response:
+            status = response.getcode()
+            return "ok", f"Dienst erreichbar (HTTP {status})."
+    except HTTPError as exc:
+        if 400 <= exc.code < 500:
+            return "ok", f"Dienst erreichbar (HTTP {exc.code}; Zugriff ggf. geschützt)."
+        return "error", f"Dienst antwortet mit HTTP {exc.code}."
+    except URLError as exc:
+        return "error", f"Verbindung fehlgeschlagen: {exc.reason}"
+    except TimeoutError:
+        return "error", "Zeitüberschreitung beim Verbindungstest."
 
 
 @router.get("/platform", response_class=HTMLResponse)
@@ -64,7 +94,12 @@ def platform_page(request: Request, db: Session = Depends(get_db)):
     return templates.TemplateResponse(
         request=request,
         name="platform.html",
-        context={"user": admin, "is_admin": True, "modules": _module_rows(db, admin.family_id), "connectors": _connector_rows(db, admin.family_id)},
+        context={
+            "user": admin,
+            "is_admin": True,
+            "modules": _module_rows(db, admin.family_id),
+            "connectors": _connector_rows(db, admin.family_id),
+        },
     )
 
 
@@ -73,23 +108,47 @@ def toggle_module(module_key: str, request: Request, db: Session = Depends(get_d
     admin = _admin(request, db)
     if module_key not in BUILTIN_MODULES:
         raise HTTPException(status_code=404, detail="Modul nicht gefunden")
-    state = db.scalar(select(ModuleState).where(ModuleState.family_id == admin.family_id, ModuleState.module_key == module_key))
+    state = db.scalar(
+        select(ModuleState).where(ModuleState.family_id == admin.family_id, ModuleState.module_key == module_key)
+    )
     if not state:
-        state = ModuleState(family_id=admin.family_id, module_key=module_key, enabled=not bool(BUILTIN_MODULES[module_key].get("default")))
+        state = ModuleState(
+            family_id=admin.family_id,
+            module_key=module_key,
+            enabled=not bool(BUILTIN_MODULES[module_key].get("default")),
+        )
         db.add(state)
     else:
         state.enabled = not state.enabled
-    audit(db, "module.toggled", actor=admin, target_type="module", target_id=module_key, details=f"enabled={state.enabled}")
+    audit(
+        db,
+        "module.toggled",
+        actor=admin,
+        target_type="module",
+        target_id=module_key,
+        details=f"enabled={state.enabled}",
+    )
     db.commit()
     return RedirectResponse("/platform#modules", status_code=303)
 
 
 @router.post("/platform/connectors/{connector_key}")
-def save_connector(connector_key: str, request: Request, enabled: bool = Form(False), base_url: str = Form(""), db: Session = Depends(get_db)):
+def save_connector(
+    connector_key: str,
+    request: Request,
+    enabled: bool = Form(False),
+    base_url: str = Form(""),
+    db: Session = Depends(get_db),
+):
     admin = _admin(request, db)
     if connector_key not in BUILTIN_CONNECTORS:
         raise HTTPException(status_code=404, detail="Connector nicht gefunden")
-    state = db.scalar(select(ConnectorState).where(ConnectorState.family_id == admin.family_id, ConnectorState.connector_key == connector_key))
+    state = db.scalar(
+        select(ConnectorState).where(
+            ConnectorState.family_id == admin.family_id,
+            ConnectorState.connector_key == connector_key,
+        )
+    )
     if not state:
         state = ConnectorState(family_id=admin.family_id, connector_key=connector_key)
         db.add(state)
@@ -102,20 +161,76 @@ def save_connector(connector_key: str, request: Request, enabled: bool = Form(Fa
     return RedirectResponse("/platform#connectors", status_code=303)
 
 
+@router.post("/platform/connectors/{connector_key}/health")
+def check_connector(connector_key: str, request: Request, db: Session = Depends(get_db)):
+    admin = _admin(request, db)
+    state = db.scalar(
+        select(ConnectorState).where(
+            ConnectorState.family_id == admin.family_id,
+            ConnectorState.connector_key == connector_key,
+        )
+    )
+    if connector_key not in BUILTIN_CONNECTORS or not state:
+        raise HTTPException(status_code=404, detail="Connector nicht gefunden")
+    if not state.enabled or not state.base_url:
+        state.health_status = "error"
+        state.health_message = "Connector ist nicht vollständig konfiguriert."
+    else:
+        state.health_status, state.health_message = _probe_url(state.base_url)
+    audit(
+        db,
+        "connector.health_checked",
+        actor=admin,
+        target_type="connector",
+        target_id=connector_key,
+        details=state.health_status,
+    )
+    db.commit()
+    return RedirectResponse("/platform#connectors", status_code=303)
+
+
 @router.get("/settings", response_class=HTMLResponse)
 def settings_page(request: Request, db: Session = Depends(get_db)):
     admin = _admin(request, db)
     family = db.get(Family, admin.family_id)
-    stored = {item.setting_key: item.value for item in db.scalars(select(FamilySetting).where(FamilySetting.family_id == admin.family_id)).all()}
-    return templates.TemplateResponse(request=request, name="settings.html", context={"user": admin, "is_admin": True, "family": family, "settings": stored})
+    stored = {
+        item.setting_key: item.value
+        for item in db.scalars(select(FamilySetting).where(FamilySetting.family_id == admin.family_id)).all()
+    }
+    return templates.TemplateResponse(
+        request=request,
+        name="settings.html",
+        context={"user": admin, "is_admin": True, "family": family, "settings": stored},
+    )
 
 
 @router.post("/settings")
-def save_settings(request: Request, portal_title: str = Form("Familienportal"), timezone_name: str = Form("Europe/Berlin"), language: str = Form("de"), db: Session = Depends(get_db)):
+def save_settings(
+    request: Request,
+    portal_title: str = Form("Familienportal"),
+    timezone_name: str = Form("Europe/Berlin"),
+    language: str = Form("de"),
+    profile: str = Form("small_family"),
+    db: Session = Depends(get_db),
+):
     admin = _admin(request, db)
-    values = {"portal_title": portal_title.strip() or "Familienportal", "timezone": timezone_name.strip() or "Europe/Berlin", "language": language.strip() or "de"}
+    if profile not in {"small_family", "extended_family"}:
+        raise HTTPException(status_code=400, detail="Ungültiges Familienprofil")
+    family = db.get(Family, admin.family_id)
+    if family:
+        family.profile = profile
+    values = {
+        "portal_title": portal_title.strip() or "Familienportal",
+        "timezone": timezone_name.strip() or "Europe/Berlin",
+        "language": language.strip() or "de",
+    }
     for key, value in values.items():
-        item = db.scalar(select(FamilySetting).where(FamilySetting.family_id == admin.family_id, FamilySetting.setting_key == key))
+        item = db.scalar(
+            select(FamilySetting).where(
+                FamilySetting.family_id == admin.family_id,
+                FamilySetting.setting_key == key,
+            )
+        )
         if item:
             item.value = value
         else:
@@ -129,11 +244,20 @@ def save_settings(request: Request, portal_title: str = Form("Familienportal"), 
 def roles_page(request: Request, db: Session = Depends(get_db)):
     admin = _admin(request, db)
     roles = db.scalars(select(Role).where(Role.family_id == admin.family_id).order_by(Role.name)).all()
-    return templates.TemplateResponse(request=request, name="roles.html", context={"user": admin, "is_admin": True, "roles": roles})
+    return templates.TemplateResponse(
+        request=request,
+        name="roles.html",
+        context={"user": admin, "is_admin": True, "roles": roles, "modules": BUILTIN_MODULES},
+    )
 
 
 @router.post("/admin/roles/{role_id}")
-def save_role(role_id: UUID, request: Request, permissions: str = Form(""), db: Session = Depends(get_db)):
+def save_role(
+    role_id: UUID,
+    request: Request,
+    permissions: str = Form(""),
+    db: Session = Depends(get_db),
+):
     admin = _admin(request, db)
     role = db.get(Role, role_id)
     if not role or role.family_id != admin.family_id:
@@ -142,3 +266,40 @@ def save_role(role_id: UUID, request: Request, permissions: str = Form(""), db: 
     audit(db, "role.permissions.updated", actor=admin, target_type="role", target_id=str(role.id))
     db.commit()
     return RedirectResponse("/admin/roles?saved=1", status_code=303)
+
+
+@router.post("/admin/users/{user_id}/roles")
+def save_user_roles(
+    user_id: UUID,
+    request: Request,
+    role_ids: list[str] = Form(default=[]),
+    db: Session = Depends(get_db),
+):
+    admin = _admin(request, db)
+    user = db.get(User, user_id)
+    if not user or user.family_id != admin.family_id:
+        raise HTTPException(status_code=404, detail="Benutzer nicht gefunden")
+    selected_ids: list[UUID] = []
+    for value in role_ids:
+        try:
+            selected_ids.append(UUID(value))
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail="Ungültige Rollen-ID") from exc
+    roles = (
+        db.scalars(
+            select(Role).where(Role.family_id == admin.family_id, Role.id.in_(selected_ids))
+        ).all()
+        if selected_ids
+        else []
+    )
+    user.roles = list(roles)
+    audit(
+        db,
+        "user.roles.updated",
+        actor=admin,
+        target_type="user",
+        target_id=str(user.id),
+        details=",".join(role.name for role in roles),
+    )
+    db.commit()
+    return RedirectResponse("/admin#users", status_code=303)
