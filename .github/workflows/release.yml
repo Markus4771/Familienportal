@@ -30,11 +30,27 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e '.[dev]'
           pytest
+          bash -n deploy/install.sh deploy/release-install.sh deploy/familienportalctl deploy/familienportal-release
 
       - name: Build source archive
         run: |
           mkdir -p dist release-src
           rsync -a --exclude '.git' --exclude '.venv' --exclude 'dist' --exclude 'release-src' ./ release-src/
+          RELEASE_VERSION="${GITHUB_REF_NAME#v}"
+          python - "$RELEASE_VERSION" <<'PY'
+          from pathlib import Path
+          import re
+          import sys
+
+          version = sys.argv[1]
+          init_file = Path("release-src/src/familienportal/__init__.py")
+          init_file.write_text(f'"""Familienportal application package."""\n\n__version__ = "{version}"\n', encoding="utf-8")
+          project = Path("release-src/pyproject.toml")
+          text = project.read_text(encoding="utf-8")
+          text = re.sub(r'(?m)^version="[^"]+"$', f'version="{version}"', text, count=1)
+          project.write_text(text, encoding="utf-8")
+          PY
+          printf '%s\n' "$RELEASE_VERSION" > release-src/VERSION
           tar -C release-src -czf "dist/familienportal-${GITHUB_REF_NAME}.tar.gz" .
           sha256sum "dist/familienportal-${GITHUB_REF_NAME}.tar.gz" > "dist/familienportal-${GITHUB_REF_NAME}.tar.gz.sha256"
 
