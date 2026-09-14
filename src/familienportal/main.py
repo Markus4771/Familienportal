@@ -11,6 +11,8 @@ from familienportal import __version__
 from familienportal.api import router as api_router
 from familienportal.config import get_settings
 from familienportal.database import engine
+from familienportal.module_web import router as module_router
+from familienportal.platform_web import router as platform_router
 from familienportal.web import router as web_router
 
 settings = get_settings()
@@ -35,6 +37,8 @@ app.add_middleware(
 )
 app.mount("/static", StaticFiles(directory=package_dir / "static"), name="static")
 app.include_router(web_router)
+app.include_router(platform_router)
+app.include_router(module_router)
 app.include_router(api_router)
 
 
@@ -77,7 +81,7 @@ async def capabilities() -> dict[str, object]:
     return {
         "profiles": ["small_family", "extended_family"],
         "extension_types": ["module", "connector"],
-        "core": ["families", "households", "users", "roles", "sessions", "audit"],
-        "planned_connectors": ["nextcloud", "mailcow"],
-        "planned_modules": ["news", "marketplace", "support"],
+        "core": ["families", "households", "users", "roles", "sessions", "audit", "platform_management"],
+        "connectors": ["nextcloud", "mailcow", "gramps", "homeassistant", "paperless", "immich"],
+        "modules": ["calendar", "news", "marketplace", "support", "genealogy", "documents"],
     }
