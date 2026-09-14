@@ -78,19 +78,33 @@
 - Termine mit Beschreibung, Ort und Kategorie
 - wiederkehrende Termine über RRULE
 - Erinnerungsminuten und ICS-VALARM
-- ICS Export
-- ICS Import mit UID-Duplikatschutz
-- Nextcloud-CalDAV-Verbindungstest
-- Erkennung vorhandener Nextcloud-Kalender über CalDAV
-- Migration 0005 für Kalender, Termine und Geburtstage
+- ICS Export und Import
+- Nextcloud-CalDAV-Verbindungstest und Kalendererkennung
+- Migration 0005
 
-### Noch nicht Bestandteil von 0.5.0
+## 0.5.1 – Nextcloud-CalDAV-Synchronisation – umgesetzt
 
-- vollautomatische bidirektionale CalDAV-Synchronisation
-- serverseitige Zustellung von Erinnerungsbenachrichtigungen
-- grafische Monats-/Wochenansicht mit Drag-and-drop
+- lokale Kalender mit Nextcloud-Kalendern verknüpfen
+- CalDAV REPORT zum Lesen von VEVENTs
+- neue Remote-Termine lokal anlegen
+- neue lokale Termine per PUT nach Nextcloud übertragen
+- Remote-Änderungen anhand ETag erkennen
+- lokale Änderungen anhand Zeitstempel erkennen
+- Konfliktschutz bei gleichzeitigen Änderungen
+- Sync-Token je Kalender speichern
+- Remote-Löschungen erkennen
+- lokale Löschungen über Tombstones nach Nextcloud übertragen
+- bedingte PUT/DELETE-Aufrufe mit ETag
+- API für Bindings, Konflikte und manuellen Sync
+- Migration 0006
+- Parser-Tests für CalDAV/ICS
 
-Diese Punkte bauen auf der jetzt vorhandenen Kalenderdatenbasis auf und können als 0.5.x-Erweiterungen umgesetzt werden.
+### Nächste Kalender-Ausbaustufe
+
+- grafische Monats-, Wochen- und Tagesansicht
+- komfortable Konfliktauflösung in der GUI
+- automatische zeitgesteuerte Synchronisation
+- serverseitige Erinnerungszustellung
 
 ## Phase 0.6 – Mailcow
 
