@@ -1,0 +1,5 @@
+from familienportal.main import app
+from familienportal.security_http import CsrfOriginMiddleware, SecurityHeadersMiddleware
+
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(CsrfOriginMiddleware)
