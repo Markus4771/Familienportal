@@ -9,6 +9,8 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from familienportal import __version__
 from familienportal.api import router as api_router
+from familienportal.calendar_caldav_web import router as calendar_caldav_router
+from familienportal.calendar_web import router as calendar_router
 from familienportal.config import get_settings
 from familienportal.database import engine
 from familienportal.module_web import router as module_router
@@ -28,6 +30,8 @@ app.include_router(web_router)
 app.include_router(platform_router)
 app.include_router(nextcloud_router)
 app.include_router(nextcloud_management_router)
+app.include_router(calendar_router)
+app.include_router(calendar_caldav_router)
 app.include_router(module_router)
 app.include_router(api_router)
 
@@ -60,5 +64,6 @@ async def capabilities() -> dict[str, object]:
         "core": ["families", "households", "users", "roles", "sessions", "audit", "platform_management"],
         "connectors": ["nextcloud", "mailcow", "gramps", "homeassistant", "paperless", "immich"],
         "nextcloud": ["health", "users", "user_mapping", "groups", "group_mapping", "shares", "family_folders", "webdav", "caldav", "carddav", "diagnostics"],
+        "calendar": ["personal", "family", "birthdays", "events", "recurrence", "reminders", "ics_export", "nextcloud_caldav"],
         "modules": ["calendar", "news", "marketplace", "support", "genealogy", "documents"],
     }
