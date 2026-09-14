@@ -19,6 +19,7 @@ from familienportal.config import get_settings
 from familienportal.database import engine
 from familienportal.mailcow_alias_api import router as mailcow_alias_router
 from familienportal.mailcow_mailbox_api import router as mailcow_mailbox_router
+from familienportal.mailcow_management_page import router as mailcow_management_router
 from familienportal.mailcow_mapping_api import router as mailcow_mapping_router
 from familienportal.mailcow_web import router as mailcow_router
 from familienportal.module_web import router as module_router
@@ -39,6 +40,7 @@ app.include_router(platform_router)
 app.include_router(nextcloud_router)
 app.include_router(nextcloud_management_router)
 app.include_router(mailcow_router)
+app.include_router(mailcow_management_router)
 app.include_router(mailcow_mapping_router)
 app.include_router(mailcow_mailbox_router)
 app.include_router(mailcow_alias_router)
@@ -80,7 +82,7 @@ async def capabilities() -> dict[str, object]:
         "core": ["families", "households", "users", "roles", "sessions", "audit", "platform_management"],
         "connectors": ["nextcloud", "mailcow", "gramps", "homeassistant", "paperless", "immich"],
         "nextcloud": ["health", "users", "user_mapping", "groups", "group_mapping", "shares", "family_folders", "webdav", "caldav", "carddav", "diagnostics"],
-        "mailcow": ["health", "domains", "mailboxes", "aliases", "quota_summary"],
+        "mailcow": ["health", "domains", "mailboxes", "mailbox_create", "mailbox_update", "aliases", "alias_create", "alias_update", "user_mapping", "quota_summary", "sogo_link"],
         "calendar": ["personal", "family", "birthdays", "events", "recurrence", "reminders", "ics_import", "ics_export", "month_view", "week_view", "day_view", "calendar_colors", "filters", "event_edit", "event_move", "caldav_bindings", "caldav_pull", "caldav_push", "caldav_delete", "caldav_conflicts", "conflict_resolution", "sync_tokens", "etags", "automatic_sync", "reminder_queue"],
         "modules": ["calendar", "news", "marketplace", "support", "genealogy", "documents"],
     }
