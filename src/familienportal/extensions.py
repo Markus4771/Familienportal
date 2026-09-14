@@ -41,12 +41,60 @@ class Connector(ABC):
 
 
 BUILTIN_MODULES: dict[str, dict[str, object]] = {
-    "calendar": {"name": "Kalender", "icon": "bi-calendar3", "description": "Familien-, Geburtstags- und Veranstaltungskalender", "default": True, "menu": True},
-    "news": {"name": "Nachrichten", "icon": "bi-newspaper", "description": "Familiennachrichten und Mitteilungen", "default": False, "menu": True},
-    "marketplace": {"name": "Kleinanzeigen", "icon": "bi-shop", "description": "Suchen, Tauschen und Verschenken", "default": False, "menu": True},
-    "support": {"name": "Support", "icon": "bi-life-preserver", "description": "Tickets, Hilfe und Wissensdatenbank", "default": False, "menu": True},
-    "genealogy": {"name": "Ahnenforschung", "icon": "bi-diagram-3", "description": "Integration von Gramps Web", "default": False, "menu": True},
-    "documents": {"name": "Dokumente", "icon": "bi-file-earmark-text", "description": "Dokumente und Familienordner", "default": False, "menu": True},
+    "calendar": {
+        "name": "Kalender",
+        "icon": "bi-calendar3",
+        "description": "Familien-, Geburtstags- und Veranstaltungskalender",
+        "default": True,
+        "menu": True,
+        "permission": "calendar.read",
+        "route": "/modules/calendar",
+    },
+    "news": {
+        "name": "Nachrichten",
+        "icon": "bi-newspaper",
+        "description": "Familiennachrichten und Mitteilungen",
+        "default": False,
+        "menu": True,
+        "permission": "news.read",
+        "route": "/modules/news",
+    },
+    "marketplace": {
+        "name": "Kleinanzeigen",
+        "icon": "bi-shop",
+        "description": "Suchen, Tauschen und Verschenken",
+        "default": False,
+        "menu": True,
+        "permission": "marketplace.read",
+        "route": "/modules/marketplace",
+    },
+    "support": {
+        "name": "Support",
+        "icon": "bi-life-preserver",
+        "description": "Tickets, Hilfe und Wissensdatenbank",
+        "default": False,
+        "menu": True,
+        "permission": "support.read",
+        "route": "/modules/support",
+    },
+    "genealogy": {
+        "name": "Ahnenforschung",
+        "icon": "bi-diagram-3",
+        "description": "Integration von Gramps Web",
+        "default": False,
+        "menu": True,
+        "permission": "genealogy.read",
+        "route": "/modules/genealogy",
+    },
+    "documents": {
+        "name": "Dokumente",
+        "icon": "bi-file-earmark-text",
+        "description": "Dokumente und Familienordner",
+        "default": False,
+        "menu": True,
+        "permission": "documents.read",
+        "route": "/modules/documents",
+    },
 }
 
 BUILTIN_CONNECTORS: dict[str, dict[str, object]] = {
