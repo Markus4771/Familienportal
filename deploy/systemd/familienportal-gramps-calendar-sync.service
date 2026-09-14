@@ -1,0 +1,11 @@
+[Unit]
+Description=Familienportal Gramps sync
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=familienportal
+Group=familienportal
+WorkingDirectory=/opt/familienportal
+EnvironmentFile=/etc/familienportal/familienportal.env
+ExecStart=/opt/familienportal/.venv/bin/python -m familienportal.gramps_calendar_worker
