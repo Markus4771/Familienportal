@@ -14,6 +14,7 @@ from familienportal.database import get_db
 from familienportal.gramps import GrampsClient, GrampsError
 from familienportal.gramps_models import GrampsUserMapping
 from familienportal.models import User
+from familienportal.permissions import has_permission
 from familienportal.platform_models import ConnectorState
 from familienportal.platform_web import _admin
 from familienportal.secrets import read_secret, secret_is_available, validate_secret_reference
@@ -41,6 +42,8 @@ def genealogy_page(request: Request, q: str = Query(""), db: Session = Depends(g
     user = _user_from_session(request, db)
     if not user:
         return RedirectResponse("/login", status_code=303)
+    if not has_permission(user, "genealogy.read"):
+        raise HTTPException(status_code=403, detail="Berechtigung genealogy.read erforderlich")
     state = _state(db, user.family_id)
     results: list[dict] = []
     error = None
@@ -50,7 +53,8 @@ def genealogy_page(request: Request, q: str = Query(""), db: Session = Depends(g
         except (GrampsError, HTTPException) as exc:
             error = str(getattr(exc, "detail", exc))
     mapping = db.scalar(select(GrampsUserMapping).where(GrampsUserMapping.family_id == user.family_id, GrampsUserMapping.user_id == user.id))
-    return templates.TemplateResponse(request=request, name="genealogy.html", context={"user": user, "is_admin": user.is_superadmin, "state": state, "query": q, "results": results, "mapping": mapping, "error": error})
+    is_admin = user.is_superadmin or any(role.name == "Administrator" for role in user.roles)
+    return templates.TemplateResponse(request=request, name="genealogy.html", context={"user": user, "is_admin": is_admin, "state": state, "query": q, "results": results, "mapping": mapping, "error": error})
 
 
 @router.get("/platform/gramps", response_class=HTMLResponse)
