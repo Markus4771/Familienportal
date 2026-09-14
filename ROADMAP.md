@@ -179,13 +179,28 @@
 - Passkey/WebAuthn-Datenmodell vorbereitet
 - Migration 0010
 
-### Nächste Sicherheits-Ausbaustufe 0.7.1
+## 0.7.1 – Passkeys, QR, Login-Schutz und 2FA-Notfallreset – umgesetzt
 
-- echte WebAuthn-/Passkey-Registrierung und Anmeldung
-- QR-Code-Ausgabe bei TOTP-Einrichtung
-- Login-Rate-Limits und zeitweise Sperren
-- Administrator-Notfall-Reset für 2FA
+- WebAuthn-/Passkey-Registrierung
+- Passkey-Anmeldung über Browser/Plattform-Authenticator
+- mehrere Passkeys pro Benutzer verwalten und löschen
+- RP-ID und Origin aus PUBLIC_URL ableiten oder explizit konfigurieren
+- QR-Code bei der TOTP-Einrichtung
+- persistente Login-Rate-Limits
+- zeitweise Sperre nach wiederholten Fehlversuchen
+- Rate-Limits für Passwort-, MFA-, REST- und Passkey-Anmeldung
+- Administrator-Notfallreset für 2FA mit eigenem Passwort und optional eigenem 2FA-Code
+- Zielkonto-Sessions werden beim Notfallreset widerrufen
+- Migration 0011
+- Tests für WebAuthn-Konfiguration und anonymisierte Throttle-Schlüssel
+
+### Nächste Sicherheits-Ausbaustufe 0.7.2
+
+- CSRF-Schutz für alle POST-Formulare und Fetch-Endpunkte
+- Content-Security-Policy und weitere Security-Header
 - feinere 2FA-Richtlinien pro Rolle
+- Bereinigung alter Throttle- und Recovery-Datensätze
+- optional passwortloser discoverable Passkey-Login ohne E-Mail-Vorabfrage
 
 ## Phase 0.8 – Gramps Web / Ahnenforschung
 
