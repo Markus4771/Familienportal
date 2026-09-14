@@ -8,7 +8,9 @@ from starlette.middleware.sessions import SessionMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from familienportal import __version__
+from familienportal.admin_security_071 import router as admin_security_router
 from familienportal.api import router as api_router
+from familienportal.api_login_rate import router as api_login_rate_router
 from familienportal.calendar_caldav_web import router as calendar_caldav_router
 from familienportal.calendar_conflicts_web import router as calendar_conflicts_router
 from familienportal.calendar_import_web import router as calendar_import_router
@@ -18,17 +20,22 @@ from familienportal.calendar_web import router as calendar_router
 from familienportal.config import get_settings
 from familienportal.database import engine
 from familienportal.login_mfa import router as login_mfa_router
+from familienportal.login_rate_web import router as login_rate_router
 from familienportal.mailcow_alias_api import router as mailcow_alias_router
 from familienportal.mailcow_mailbox_api import router as mailcow_mailbox_router
 from familienportal.mailcow_management_page import router as mailcow_management_router
 from familienportal.mailcow_mapping_api import router as mailcow_mapping_router
 from familienportal.mailcow_web import router as mailcow_router
+from familienportal.mfa_rate_web import router as mfa_rate_router
 from familienportal.module_web import router as module_router
 from familienportal.nextcloud_management_web import router as nextcloud_management_router
 from familienportal.nextcloud_web import router as nextcloud_router
+from familienportal.passkey_page import router as passkey_page_router
 from familienportal.platform_web import router as platform_router
 from familienportal.security_web import router as security_router
 from familienportal.session_guard import SessionGuardMiddleware
+from familienportal.totp_qr_web import router as totp_qr_router
+from familienportal.webauthn_web import router as webauthn_router
 from familienportal.web import router as web_router
 
 settings = get_settings()
@@ -39,6 +46,16 @@ app.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.trusted_hosts)
 app.add_middleware(SessionGuardMiddleware)
 app.add_middleware(SessionMiddleware, secret_key=settings.session_secret_key, https_only=settings.secure_cookies, same_site="lax", max_age=settings.session_max_age_seconds)
 app.mount("/static", StaticFiles(directory=package_dir / "static"), name="static")
+
+# 0.7.1 policies are intentionally registered before legacy routes with the same paths.
+app.include_router(login_rate_router)
+app.include_router(mfa_rate_router)
+app.include_router(api_login_rate_router)
+app.include_router(webauthn_router)
+app.include_router(passkey_page_router)
+app.include_router(totp_qr_router)
+app.include_router(admin_security_router)
+
 app.include_router(web_router)
 app.include_router(login_mfa_router)
 app.include_router(security_router)
@@ -90,6 +107,6 @@ async def capabilities() -> dict[str, object]:
         "nextcloud": ["health", "users", "user_mapping", "groups", "group_mapping", "shares", "family_folders", "webdav", "caldav", "carddav", "diagnostics"],
         "mailcow": ["health", "domains", "mailboxes", "mailbox_create", "mailbox_update", "mailbox_password_reset", "aliases", "alias_create", "alias_update", "alias_delete", "distribution_lists", "user_mapping", "user_unmapping", "quota_summary", "sogo_link"],
         "calendar": ["personal", "family", "birthdays", "events", "recurrence", "reminders", "ics_import", "ics_export", "month_view", "week_view", "day_view", "calendar_colors", "filters", "event_edit", "event_move", "caldav_bindings", "caldav_pull", "caldav_push", "caldav_delete", "caldav_conflicts", "conflict_resolution", "sync_tokens", "etags", "automatic_sync", "reminder_queue"],
-        "security": ["totp", "recovery_codes", "password_reset_email", "revocable_sessions", "session_listing", "admin_mfa_policy", "passkey_storage"],
+        "security": ["totp", "totp_qr", "recovery_codes", "password_reset_email", "revocable_sessions", "session_listing", "admin_mfa_policy", "admin_mfa_emergency_reset", "passkeys", "webauthn_registration", "webauthn_login", "login_rate_limit"],
         "modules": ["calendar", "news", "marketplace", "support", "genealogy", "documents"],
     }
