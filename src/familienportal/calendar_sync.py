@@ -2,12 +2,11 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from urllib.parse import quote
-from uuid import uuid4
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from familienportal.caldav import CalDAVClient, CalDAVError, CalDAVObject
+from familienportal.caldav import CalDAVClient, CalDAVError
 from familienportal.calendar_ics import event_to_ics
 from familienportal.calendar_models import CalendarEvent
 from familienportal.calendar_sync_models import CalendarEventSyncState, CalendarSyncBinding
@@ -52,26 +51,11 @@ def parse_event_ics(text: str) -> dict[str, object]:
         raise ValueError("VEVENT ohne UID oder DTSTART")
     start = _parse_dt(values["DTSTART"])
     end = _parse_dt(values.get("DTEND", values["DTSTART"]))
-    return {
-        "uid": values["UID"],
-        "title": values.get("SUMMARY", "Termin"),
-        "description": values.get("DESCRIPTION") or None,
-        "location": values.get("LOCATION") or None,
-        "starts_at": start,
-        "ends_at": end,
-        "recurrence_rule": values.get("RRULE") or None,
-    }
+    return {"uid": values["UID"], "title": values.get("SUMMARY", "Termin"), "description": values.get("DESCRIPTION") or None, "location": values.get("LOCATION") or None, "starts_at": start, "ends_at": end, "recurrence_rule": values.get("RRULE") or None}
 
 
 def _event_vcalendar(event: CalendarEvent) -> str:
-    return "\r\n".join([
-        "BEGIN:VCALENDAR",
-        "VERSION:2.0",
-        "PRODID:-//Familienportal//CalDAV Sync 0.5.1//DE",
-        event_to_ics(event),
-        "END:VCALENDAR",
-        "",
-    ])
+    return "\r\n".join(["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Familienportal//CalDAV Sync 0.5.1//DE", event_to_ics(event), "END:VCALENDAR", ""])
 
 
 def sync_binding(db: Session, client: CalDAVClient, binding: CalendarSyncBinding) -> dict[str, int]:
@@ -95,6 +79,16 @@ def sync_binding(db: Session, client: CalDAVClient, binding: CalendarSyncBinding
                 continue
             remote_changed = state.remote_etag != remote.etag
             local_changed = bool(state.last_local_updated_at and event.updated_at > state.last_local_updated_at)
+            if event.deleted_at:
+                try:
+                    client.delete_object(state.remote_href, state.remote_etag)
+                    db.delete(event)
+                    stats["deleted"] += 1
+                except CalDAVError as exc:
+                    state.conflict = True
+                    state.conflict_message = str(exc)
+                    stats["conflicts"] += 1
+                continue
             if remote_changed and local_changed:
                 state.conflict = True
                 state.conflict_message = "Lokal und in Nextcloud geändert; keine Seite überschrieben."
@@ -116,27 +110,10 @@ def sync_binding(db: Session, client: CalDAVClient, binding: CalendarSyncBinding
                 state.conflict_message = None
                 stats["pulled"] += 1
         else:
-            event = CalendarEvent(
-                family_id=binding.family_id,
-                calendar_id=binding.calendar_id,
-                title=str(parsed["title"]),
-                description=parsed["description"],
-                location=parsed["location"],
-                starts_at=parsed["starts_at"],
-                ends_at=parsed["ends_at"],
-                recurrence_rule=parsed["recurrence_rule"],
-                external_uid=str(parsed["uid"]),
-                source="nextcloud",
-            )
+            event = CalendarEvent(family_id=binding.family_id, calendar_id=binding.calendar_id, title=str(parsed["title"]), description=parsed["description"], location=parsed["location"], starts_at=parsed["starts_at"], ends_at=parsed["ends_at"], recurrence_rule=parsed["recurrence_rule"], external_uid=str(parsed["uid"]), source="nextcloud")
             db.add(event)
             db.flush()
-            sync_state = CalendarEventSyncState(
-                event_id=event.id,
-                binding_id=binding.id,
-                remote_href=remote.href,
-                remote_etag=remote.etag,
-                last_local_updated_at=event.updated_at,
-            )
+            sync_state = CalendarEventSyncState(event_id=event.id, binding_id=binding.id, remote_href=remote.href, remote_etag=remote.etag, last_local_updated_at=event.updated_at)
             db.add(sync_state)
             state_by_event[event.id] = sync_state
             state_by_href[remote.href] = sync_state
@@ -145,6 +122,18 @@ def sync_binding(db: Session, client: CalDAVClient, binding: CalendarSyncBinding
     remote_hrefs = set(remote_by_href)
     for event in local_events:
         state = state_by_event.get(event.id)
+        if event.deleted_at:
+            if state and state.remote_href in remote_hrefs:
+                try:
+                    client.delete_object(state.remote_href, state.remote_etag)
+                except CalDAVError as exc:
+                    state.conflict = True
+                    state.conflict_message = str(exc)
+                    stats["conflicts"] += 1
+                    continue
+            db.delete(event)
+            stats["deleted"] += 1
+            continue
         if state and state.remote_href not in remote_hrefs and not state.deleted_remote:
             if event.updated_at > (state.last_local_updated_at or event.created_at):
                 state.conflict = True
