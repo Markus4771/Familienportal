@@ -238,14 +238,28 @@
 - CSP ohne `unsafe-inline`
 - optional zusätzliche synchronizer CSRF-Tokens
 
-## Phase 0.8 – Gramps Web / Ahnenforschung
+## 0.8.0 – Gramps Web / Ahnenforschung – umgesetzt
 
-- Gramps-Web-Connector
+- Gramps-Web-Connector über die native REST-API
+- Token nur über Secret-Referenz, kein Gramps-Passwort in der Portal-Datenbank
 - API- und Healthcheck
-- Benutzer-/Rechtezuordnung
+- Benutzer-/Rechtezuordnung zwischen Portal und Gramps Web
+- optionaler Person-Handle je Portal-Benutzer
 - Personen- und Familiensuche
-- Geburtstage und Gedenktage
-- GEDCOM Import/Export
+- Person- und Familiendetails über Portal-REST-Endpunkte
+- Übersicht für Geburtstage und Gedenktage
+- GEDCOM-Export über Gramps-Web-Tasks
+- GEDCOM-Import für Administratoren mit Größen- und Dateitypprüfung
+- Migration 0012 für Gramps-Benutzerzuordnungen
+- Tests für Payload-Normalisierung, Suche und Lebensdaten
+
+### Nächste Gramps-Ausbaustufe 0.8.1
+
+- ausgewählte Gramps-Geburtstage/Gedenktage in Portal-Kalender synchronisieren
+- komfortablere Personendetailseiten und Beziehungsdarstellung
+- Medien- und Dokument-Verknüpfungen
+- optional OIDC/SSO mit Gramps Web
+- Datenschutzregeln für lebende Personen weiter verfeinern
 
 ## Spätere Plattformausbaustufen
 
