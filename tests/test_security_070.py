@@ -1,18 +1,17 @@
 from familienportal.auth_models import UserMfaState
 from familienportal.auth_security import (
     consume_recovery_code,
-    encrypt_seed,
     decrypt_seed,
+    encrypt_seed,
     generate_recovery_codes,
     hash_verifier,
     store_recovery_codes,
     totp_code,
-    verify_totp,
 )
 from familienportal.config import Settings
 
 
-def test_totp_generation_and_verification():
+def test_totp_generation():
     seed = "JBSWY3DPEHPK3PXP"
     code = totp_code(seed, at=1_700_000_000)
     assert len(code) == 6
