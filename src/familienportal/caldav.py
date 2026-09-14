@@ -28,11 +28,7 @@ class CalDAVClient:
 
     def _headers(self, content_type: str = "application/xml; charset=utf-8") -> dict[str, str]:
         token = base64.b64encode(f"{self.username}:{self.password}".encode()).decode()
-        return {
-            "Authorization": f"Basic {token}",
-            "User-Agent": "Familienportal/0.5.1",
-            "Content-Type": content_type,
-        }
+        return {"Authorization": f"Basic {token}", "User-Agent": "Familienportal/0.5.2", "Content-Type": content_type}
 
     def _absolute_url(self, href: str) -> str:
         if href.startswith("http://") or href.startswith("https://"):
@@ -61,8 +57,7 @@ class CalDAVClient:
             return False, "CalDAV-Zeitüberschreitung."
 
     def list_calendars(self) -> list[dict[str, str]]:
-        body = b'''<?xml version="1.0" encoding="utf-8" ?>
-<d:propfind xmlns:d="DAV:"><d:prop><d:displayname/><d:resourcetype/></d:prop></d:propfind>'''
+        body = b'''<?xml version="1.0" encoding="utf-8" ?><d:propfind xmlns:d="DAV:"><d:prop><d:displayname/><d:resourcetype/></d:prop></d:propfind>'''
         request = Request(self.calendar_home_url(), method="PROPFIND", data=body, headers={**self._headers(), "Depth": "1"})
         try:
             with urlopen(request, timeout=self.timeout) as response:
@@ -96,11 +91,7 @@ class CalDAVClient:
         return root.findtext(".//d:sync-token", default=None, namespaces=ns)
 
     def list_objects(self, calendar_href: str) -> list[CalDAVObject]:
-        body = b'''<?xml version="1.0" encoding="utf-8" ?>
-<c:calendar-query xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
-  <d:prop><d:getetag/><c:calendar-data/></d:prop>
-  <c:filter><c:comp-filter name="VCALENDAR"><c:comp-filter name="VEVENT"/></c:comp-filter></c:filter>
-</c:calendar-query>'''
+        body = b'''<?xml version="1.0" encoding="utf-8" ?><c:calendar-query xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav"><d:prop><d:getetag/><c:calendar-data/></d:prop><c:filter><c:comp-filter name="VCALENDAR"><c:comp-filter name="VEVENT"/></c:comp-filter></c:filter></c:calendar-query>'''
         request = Request(self._absolute_url(calendar_href), method="REPORT", data=body, headers={**self._headers(), "Depth": "1"})
         try:
             with urlopen(request, timeout=self.timeout) as response:
@@ -119,6 +110,16 @@ class CalDAVClient:
             if href and data:
                 items.append(CalDAVObject(href=href, etag=etag, data=data))
         return items
+
+    def get_object(self, href: str) -> CalDAVObject:
+        request = Request(self._absolute_url(href), method="GET", headers=self._headers("text/calendar; charset=utf-8"))
+        try:
+            with urlopen(request, timeout=self.timeout) as response:
+                return CalDAVObject(href=href, etag=response.headers.get("ETag"), data=response.read().decode("utf-8"))
+        except HTTPError as exc:
+            raise CalDAVError(f"CalDAV GET HTTP {exc.code}") from exc
+        except URLError as exc:
+            raise CalDAVError(f"CalDAV-Verbindung fehlgeschlagen: {exc.reason}") from exc
 
     def put_object(self, href: str, ics_data: str, etag: str | None = None) -> str | None:
         headers = self._headers("text/calendar; charset=utf-8")
