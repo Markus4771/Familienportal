@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
@@ -5,8 +6,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from familienportal.caldav import CalDAVClient
-from familienportal.calendar_models import Calendar
-from familienportal.calendar_sync import sync_binding
+from familienportal.calendar_models import Calendar, CalendarEvent
+from familienportal.calendar_sync import parse_event_ics, sync_binding
 from familienportal.calendar_sync_models import CalendarEventSyncState, CalendarSyncBinding
 from familienportal.database import get_db
 from familienportal.nextcloud_web import _client as nextcloud_client
@@ -22,6 +23,22 @@ def _caldav(db: Session, family_id) -> CalDAVClient:
         raise HTTPException(status_code=409, detail="Nextcloud ist nicht konfiguriert")
     nc = nextcloud_client(state)
     return CalDAVClient(nc.base_url, nc.username, nc.password)
+
+
+def _conflict(db: Session, family_id, event_id: UUID) -> tuple[CalendarEventSyncState, CalendarEvent]:
+    state = db.scalar(
+        select(CalendarEventSyncState)
+        .join(CalendarSyncBinding)
+        .where(
+            CalendarSyncBinding.family_id == family_id,
+            CalendarEventSyncState.event_id == event_id,
+            CalendarEventSyncState.conflict.is_(True),
+        )
+    )
+    event = db.get(CalendarEvent, event_id)
+    if not state or not event or event.family_id != family_id:
+        raise HTTPException(status_code=404, detail="Kalenderkonflikt nicht gefunden")
+    return state, event
 
 
 @router.get("/bindings")
@@ -55,7 +72,56 @@ def save_binding(request: Request, calendar_id: UUID = Form(...), remote_href: s
 def conflicts(request: Request, db: Session = Depends(get_db)):
     admin = _admin(request, db)
     items = db.scalars(select(CalendarEventSyncState).join(CalendarSyncBinding).where(CalendarSyncBinding.family_id == admin.family_id, CalendarEventSyncState.conflict.is_(True))).all()
-    return [{"event_id": item.event_id, "binding_id": item.binding_id, "remote_href": item.remote_href, "message": item.conflict_message} for item in items]
+    result = []
+    for item in items:
+        event = db.get(CalendarEvent, item.event_id)
+        result.append({"event_id": item.event_id, "binding_id": item.binding_id, "remote_href": item.remote_href, "message": item.conflict_message, "title": event.title if event else "Unbekannt"})
+    return result
+
+
+@router.post("/conflicts/{event_id}/local")
+def resolve_local(event_id: UUID, request: Request, db: Session = Depends(get_db)):
+    admin = _admin(request, db)
+    state, event = _conflict(db, admin.family_id, event_id)
+    client = _caldav(db, admin.family_id)
+    remote = client.get_object(state.remote_href)
+    state.remote_etag = remote.etag
+    state.conflict = False
+    state.conflict_message = None
+    state.last_local_updated_at = None
+    event.updated_at = datetime.now(timezone.utc)
+    db.commit()
+    binding = db.get(CalendarSyncBinding, state.binding_id)
+    if binding:
+        sync_binding(db, client, binding)
+    return {"status": "resolved", "winner": "local"}
+
+
+@router.post("/conflicts/{event_id}/remote")
+def resolve_remote(event_id: UUID, request: Request, db: Session = Depends(get_db)):
+    admin = _admin(request, db)
+    state, event = _conflict(db, admin.family_id, event_id)
+    remote = _caldav(db, admin.family_id).get_object(state.remote_href)
+    try:
+        parsed = parse_event_ics(remote.data)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail="Remote-Termin kann nicht gelesen werden") from exc
+    event.title = str(parsed["title"])
+    event.description = parsed["description"]
+    event.location = parsed["location"]
+    event.starts_at = parsed["starts_at"]
+    event.ends_at = parsed["ends_at"]
+    event.recurrence_rule = parsed["recurrence_rule"]
+    event.external_uid = str(parsed["uid"])
+    event.source = "nextcloud"
+    event.updated_at = datetime.now(timezone.utc)
+    event.deleted_at = None
+    state.remote_etag = remote.etag
+    state.last_local_updated_at = event.updated_at
+    state.conflict = False
+    state.conflict_message = None
+    db.commit()
+    return {"status": "resolved", "winner": "remote"}
 
 
 @router.post("/{binding_id}/run")
