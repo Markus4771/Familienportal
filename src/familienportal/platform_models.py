@@ -30,9 +30,12 @@ class ConnectorState(Base):
     connector_key: Mapped[str] = mapped_column(String(80), index=True)
     enabled: Mapped[bool] = mapped_column(Boolean, default=False)
     base_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    username: Mapped[str | None] = mapped_column(String(320), nullable=True)
+    secret_reference: Mapped[str | None] = mapped_column(String(160), nullable=True)
     config_json: Mapped[str] = mapped_column(Text, default="{}")
     health_status: Mapped[str] = mapped_column(String(40), default="not_checked")
     health_message: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    health_checked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
 
