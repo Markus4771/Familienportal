@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import delete, or_
@@ -12,29 +13,19 @@ def cleanup_security_records(retention_days: int = 30) -> dict[str, int]:
     now = datetime.now(timezone.utc)
     cutoff = now - timedelta(days=retention_days)
     with SessionLocal() as db:
-        throttles = db.execute(
-            delete(LoginThrottle).where(LoginThrottle.updated_at < cutoff)
-        ).rowcount or 0
+        throttles = db.execute(delete(LoginThrottle).where(LoginThrottle.updated_at < cutoff)).rowcount or 0
         recovery = db.execute(
             delete(AccountRecoveryRequest).where(
-                or_(
-                    AccountRecoveryRequest.expires_at < cutoff,
-                    AccountRecoveryRequest.used_at < cutoff,
-                )
+                or_(AccountRecoveryRequest.expires_at < cutoff, AccountRecoveryRequest.used_at < cutoff)
             )
         ).rowcount or 0
         sessions = db.execute(
-            delete(LoginSession).where(
-                or_(
-                    LoginSession.expires_at < cutoff,
-                    LoginSession.revoked_at < cutoff,
-                )
-            )
+            delete(LoginSession).where(or_(LoginSession.expires_at < cutoff, LoginSession.revoked_at < cutoff))
         ).rowcount or 0
         db.commit()
     return {"throttles": throttles, "recovery": recovery, "sessions": sessions}
 
 
 if __name__ == "__main__":
-    result = cleanup_security_records()
-    print(result)
+    days = int(os.getenv("FAMILIENPORTAL_SECURITY_CLEANUP_DAYS", "30"))
+    print(cleanup_security_records(days))
