@@ -47,6 +47,8 @@ FAMILIENPORTAL_REQUIRE_ADMIN_MFA=false
 
 Bei Neuinstallationen erzeugt `deploy/install.sh` den Security-Schlüssel automatisch. Bei bestehenden Installationen muss ein stabiler, zufälliger Wert manuell in `/etc/familienportal/familienportal.env` gesetzt werden. Der Schlüssel darf später nicht ohne Migration geändert werden, da sonst vorhandene TOTP-Seeds nicht mehr entschlüsselt werden können.
 
+In `production` verweigert die Anwendung den Start, wenn weiterhin der eingebaute Entwicklungswert für `FAMILIENPORTAL_SESSION_SECRET_KEY` oder `FAMILIENPORTAL_SECURITY_ENCRYPTION_KEY` verwendet wird. Dadurch kann 0.7.0 nicht versehentlich mit Standard-Secrets produktiv betrieben werden.
+
 ## Datenbank
 
 Migration `0010_security_070.py` legt folgende Tabellen an:
@@ -64,7 +66,20 @@ sudo -u familienportal /opt/familienportal/.venv/bin/alembic -c /opt/familienpor
 
 ## Tests
 
-`tests/test_security_070.py` prüft TOTP-Erzeugung, Verschlüsselungs-Roundtrip, Einmalverwendung von Recovery-Codes und Token-Hashing. Zusätzlich läuft `.github/workflows/ci.yml` unter Python 3.12 bei Pushes und Pull Requests.
+`tests/test_security_070.py` prüft TOTP-Erzeugung, Verschlüsselungs-Roundtrip, Einmalverwendung von Recovery-Codes, Token-Hashing sowie die Production-Validierung der Security-Secrets. Zusätzlich läuft `.github/workflows/ci.yml` unter Python 3.12 bei Pushes und Pull Requests.
+
+## Manueller Test auf Debian
+
+Nach dem Upgrade sollten mindestens diese Abläufe geprüft werden:
+
+1. Anmeldung ohne aktivierte 2FA.
+2. TOTP unter `/security` einrichten und Recovery-Codes sichern.
+3. Abmelden und Login mit TOTP durchführen.
+4. Login mit einem Recovery-Code durchführen und denselben Code anschließend erneut ablehnen lassen.
+5. Unter `/security` eine zweite Sitzung widerrufen.
+6. Passwort-Reset unter `/forgot-password` anfordern und Link aus der E-Mail verwenden.
+7. Prüfen, dass nach dem Passwort-Reset alte Sitzungen ungültig sind.
+8. Erst danach optional `FAMILIENPORTAL_REQUIRE_ADMIN_MFA=true` setzen.
 
 ## Noch nicht in 0.7.0
 
