@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}CalDAV · Familienportal{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-start mb-4"><div><p class="text-uppercase small fw-semibold text-primary mb-1">Nextcloud</p><h1 class="h2">CalDAV-Diagnose</h1><p class="text-secondary">Verbindung und erkannte Kalender des konfigurierten Nextcloud-Servicekontos.</p></div><a class="btn btn-outline-secondary" href="/calendar">Zurück zum Kalender</a></div>
+<div class="alert {% if ok %}alert-success{% else %}alert-warning{% endif %}">{{ message }}</div>
+<div class="card border-0 shadow-sm"><div class="card-body"><h2 class="h5">Erkannte Nextcloud-Kalender</h2>{% if calendars %}<div class="table-responsive"><table class="table align-middle"><thead><tr><th>Name</th><th>DAV-Pfad</th></tr></thead><tbody>{% for item in calendars %}<tr><td>{{ item.name }}</td><td><code>{{ item.href }}</code></td></tr>{% endfor %}</tbody></table></div>{% else %}<p class="text-secondary mb-0">Keine Kalender erkannt.</p>{% endif %}</div></div>
+{% endblock %}
