@@ -194,13 +194,26 @@
 - Migration 0011
 - Tests für WebAuthn-Konfiguration und anonymisierte Throttle-Schlüssel
 
-### Nächste Sicherheits-Ausbaustufe 0.7.2
+## 0.7.2 – Security Hardening – umgesetzt
 
-- CSRF-Schutz für alle POST-Formulare und Fetch-Endpunkte
-- Content-Security-Policy und weitere Security-Header
-- feinere 2FA-Richtlinien pro Rolle
-- Bereinigung alter Throttle- und Recovery-Datensätze
-- optional passwortloser discoverable Passkey-Login ohne E-Mail-Vorabfrage
+- zentraler Same-Origin-/CSRF-Schutz für schreibende Browser-Anfragen
+- Security-Header: CSP, Frame-Schutz, MIME-Sniffing-Schutz, Referrer-Policy und Permissions-Policy
+- HSTS bei HTTPS-Betrieb
+- rollenbasierte 2FA-Pflicht über `FAMILIENPORTAL_MFA_REQUIRED_ROLES`
+- tägliche Bereinigung alter Login-Throttles, Recovery-Anfragen und Sessions
+- konfigurierbare Aufbewahrungsdauer für Security-Datensätze
+- systemd Security-Cleanup-Service und Timer
+- Debian-Installer aktiviert den Cleanup-Timer
+- Tests für Security-Header sowie Same-Origin-/Cross-Origin-Anfragen
+
+### Nächste Ausbaustufe 0.7.3
+
+- Installer / Update / Remove als vollständiger Lifecycle
+- Backup vor Updates und Rollback bei Fehlern
+- Release-basierte Installation statt direktem main-Branch
+- Vorbereitung eines Debian-Pakets
+- CSP ohne `unsafe-inline`
+- optional zusätzliche synchronizer CSRF-Tokens
 
 ## Phase 0.8 – Gramps Web / Ahnenforschung
 
