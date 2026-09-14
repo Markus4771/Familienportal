@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Recovery-Codes · Familienportal{% endblock %}
+{% block content %}
+<div class="row justify-content-center"><div class="col-lg-6"><div class="card border-0 shadow-sm"><div class="card-body p-4">
+<h1 class="h4">Recovery-Codes</h1><div class="alert alert-warning">Diese Codes werden nur jetzt angezeigt. Sicher und getrennt vom Passwort aufbewahren.</div>
+<div class="row g-2 mb-4">{% for code in codes %}<div class="col-6"><code class="d-block border rounded p-2 text-center">{{ code }}</code></div>{% endfor %}</div>
+<a class="btn btn-primary" href="/security">Weiter</a>
+</div></div></div></div>
+{% endblock %}
