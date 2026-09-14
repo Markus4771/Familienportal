@@ -48,18 +48,25 @@
 - Status und Fehlermeldung im Dashboard
 - Portalname, Sprache und Zeitzone
 - Profil Kleinfamilie/Großfamilie konfigurierbar
-- technische Dokumentation der Plattform 0.3
 
-## Phase 0.4 – Nextcloud-Connector
+## 0.4.0 – Nextcloud-Basis – umgesetzt
 
-- Verbindung und dienstspezifischer Healthcheck
-- sichere Secret-Verwaltung für Zugangsdaten
-- Benutzer-/Gruppenzuordnung
-- Dateien und Familienordner
-- WebDAV
-- CalDAV
-- CardDAV
-- Freigaben
+- Nextcloud-spezifischer Healthcheck
+- Secret-Referenz über Umgebungsvariable
+- OCS-Benutzer und Gruppen lesen
+- Freigaben lesen
+- WebDAV-Dateiliste
+- CalDAV-/CardDAV-Endpunkte
+
+## 0.4.1 – Nextcloud-Verwaltung – umgesetzt
+
+- Benutzer des Familienportals Nextcloud-Benutzern zuordnen
+- Nextcloud-Gruppen Familie oder Haushalten zuordnen
+- Familienordner per WebDAV anlegen und registrieren
+- DAV-Diagnose
+- eigene Verwaltungsoberfläche
+- Audit für Zuordnungen und Ordneranlage
+- Migration 0004 für Nextcloud-Zuordnungen
 
 ## Phase 0.5 – Kalenderplattform
 
