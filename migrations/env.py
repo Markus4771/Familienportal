@@ -11,6 +11,7 @@ from familienportal import nextcloud_models  # noqa: F401
 from familienportal import calendar_models  # noqa: F401
 from familienportal import calendar_sync_models  # noqa: F401
 from familienportal import job_state  # noqa: F401
+from familienportal import mailcow_models  # noqa: F401
 
 config = context.config
 config.set_main_option("sqlalchemy.url", get_settings().database_url)
