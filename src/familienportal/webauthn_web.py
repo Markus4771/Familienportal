@@ -11,10 +11,11 @@ from webauthn.helpers.exceptions import WebAuthnException
 
 from familienportal.api import audit
 from familienportal.auth_models import PasskeyCredential
-from familienportal.auth_security import create_session
+from familienportal.auth_security import consume_recovery_code, create_session, decrypt_seed, get_mfa_state, verify_totp
 from familienportal.config import get_settings
 from familienportal.database import get_db
 from familienportal.models import User, UserStatus
+from familienportal.security import verify_password
 from familienportal.throttle import clear, fail, lock_seconds, make_key
 from familienportal.webauthn_service import (
     authentication_options,
@@ -46,8 +47,19 @@ def _client_ip(request: Request) -> str | None:
 
 
 @router.post("/api/v1/security/passkeys/register/options")
-def passkey_register_options(request: Request, db: Session = Depends(get_db)):
+async def passkey_register_options(request: Request, db: Session = Depends(get_db)):
     user = _current_user(request, db)
+    body = await request.json()
+    password = str(body.get("password") or "")
+    code = str(body.get("code") or "")
+    if not verify_password(password, user.password_hash):
+        raise HTTPException(status_code=403, detail="Aktuelles Passwort ist ungültig")
+    mfa = get_mfa_state(db, user.id)
+    if mfa and mfa.enabled and mfa.encrypted_seed:
+        valid = verify_totp(decrypt_seed(mfa.encrypted_seed, settings), code) or consume_recovery_code(mfa, code)
+        if not valid:
+            raise HTTPException(status_code=403, detail="Aktueller 2FA-/Recovery-Code ist ungültig")
+        db.commit()
     options, challenge = registration_options(db, user, settings)
     request.session["webauthn_registration_challenge"] = challenge
     return options
@@ -79,7 +91,7 @@ def passkey_delete(credential_id: UUID, request: Request, db: Session = Depends(
         db.delete(item)
         audit(db, "security.passkey.deleted", actor=user, target_type="passkey", target_id=str(item.id))
         db.commit()
-    return RedirectResponse("/security", status_code=303)
+    return RedirectResponse("/security/passkeys", status_code=303)
 
 
 @router.post("/api/v1/auth/passkey/options")
