@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Gramps Web · Familienportal{% endblock %}
+{% block content %}
+<h1 class="h2 mb-3">Gramps Web</h1>
+<div class="card mb-4"><div class="card-body">
+<form method="post" action="/platform/gramps/config">
+<div class="form-check mb-3"><input class="form-check-input" type="checkbox" name="enabled" value="true" {% if state and state.enabled %}checked{% endif %}> <label class="form-check-label">Aktiviert</label></div>
+<input class="form-control mb-2" name="base_url" value="{{ state.base_url if state else '' }}" placeholder="Gramps-Web-URL">
+<input class="form-control mb-2" name="secret_reference" value="{{ state.secret_reference if state and state.secret_reference else 'FAMILIENPORTAL_GRAMPS_ACCESS_TOKEN' }}" placeholder="Secret-Referenz">
+<button class="btn btn-primary">Speichern</button>
+</form>
+{% if state %}<form method="post" action="/platform/gramps/health" class="mt-2"><button class="btn btn-outline-primary">Verbindung testen</button></form>{% endif %}
+<p class="small text-secondary mt-2">Status: {{ state.health_status if state else 'nicht konfiguriert' }}</p>
+</div></div>
+<div class="card"><div class="card-body"><h2 class="h5">Zuordnung</h2>
+<form method="post" action="/platform/gramps/mapping" class="row g-2">
+<div class="col-md-3"><select class="form-select" name="user_id">{% for p in users %}<option value="{{ p.id }}">{{ p.display_name }}</option>{% endfor %}</select></div>
+<div class="col-md-3"><input class="form-control" name="gramps_username" placeholder="Gramps-Benutzer"></div>
+<div class="col-md-2"><select class="form-select" name="gramps_role"><option>Guest</option><option>Member</option><option>Editor</option><option>Owner</option></select></div>
+<div class="col-md-3"><input class="form-control" name="person_handle" placeholder="Person-Handle"></div>
+<div class="col-md-1"><button class="btn btn-primary">OK</button></div>
+</form>
+</div></div>
+{% endblock %}
