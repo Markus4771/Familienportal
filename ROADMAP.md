@@ -10,43 +10,67 @@
 - Modul- und Connector-Verträge
 - Testbasis
 - Debian als verbindliche Zielplattform
-- Betrieb hinter vorhandenem Nginx
+- Betrieb hinter vorhandenem Nginx Proxy Manager
 - getrennte Dienste für Familienportal, Nextcloud und Mailcow
 
 ## Phase 0.2 – Benutzer und Rechte
 
-- Benutzer, Haushalte und Familienzweige
+- Benutzer und Haushalte
 - Anmeldung und Sitzungen
 - Rollen und Berechtigungen
 - Administration
 - Auditprotokoll
-- Dashboard
+- Dashboard-Grundlage
 
-## Phase 0.3 – Module und Connectoren
+## 0.3.1 – Dynamische Plattformoberfläche – umgesetzt
 
-- Modulmanager
-- Connector-Manager
-- Event-Bus
-- dynamische Menüs und Widgets
-- Modulberechtigungen
-- Beispielmodul und Entwicklerdokumentation
+- dynamisches Dashboard aus aktivierten Modulen
+- dynamische Navigation
+- Modulstatus je Familie
+- Berechtigungsprüfung für Navigation und direkten Modulzugriff
+- Connectorstatus im Dashboard
+- generischer Moduleinstieg
 
-## Phase 0.4 – Großfamilienbasis
+## 0.3.2 – Rollen und Modulrechte – umgesetzt
 
-- Nachrichtenportal
-- Kleinanzeigen
-- Familiengruppen
-- Support- und Ticketsystem
+- zentrale Modulrechte
+- Namespace-Wildcards
+- mehrere Rollen pro Benutzer
+- Rollenverwaltung
+- Modulrechte in der Verwaltung sichtbar
+- Audit für Rechte- und Rollenanpassungen
 
-## Phase 0.5 – Nextcloud
+## 0.3.3 – Connector-Manager und Einstellungen – umgesetzt
 
-- Verbindungstest
+- Connectoren aktivieren/deaktivieren
+- Basis-URLs je Familie
+- manueller HTTP/HTTPS-Healthcheck
+- Status und Fehlermeldung im Dashboard
+- Portalname, Sprache und Zeitzone
+- Profil Kleinfamilie/Großfamilie konfigurierbar
+- technische Dokumentation der Plattform 0.3
+
+## Phase 0.4 – Nextcloud-Connector
+
+- Verbindung und dienstspezifischer Healthcheck
+- sichere Secret-Verwaltung für Zugangsdaten
 - Benutzer-/Gruppenzuordnung
 - Dateien und Familienordner
 - WebDAV
+- CalDAV
+- CardDAV
 - Freigaben
-- Kalender und Kontakte
-- unabhängige Installation und Sicherung
+
+## Phase 0.5 – Kalenderplattform
+
+- persönlicher Kalender
+- Familienkalender
+- Geburtstagskalender
+- Veranstaltungskalender
+- wiederkehrende Termine
+- Erinnerungen
+- Nextcloud-/CalDAV-Anbindung
+- ICS Import/Export
 
 ## Phase 0.6 – Mailcow
 
@@ -54,24 +78,37 @@
 - Postfachverwaltung
 - Aliasse und Verteiler
 - Quotas
-- Passwortänderung
+- Passwort-Zurücksetzung per E-Mail vorbereiten
 - Webmail-Verknüpfung
-- unabhängige Installation und Sicherung
 
-## Phase 0.7 – Debian-Betrieb
+## Phase 0.7 – Sicherheit
 
-- systemd-Dienst für das Familienportal
-- Betrieb unter eigenem Linux-Systembenutzer
-- lokale Bindung hinter Nginx
-- produktive Nginx-Beispielkonfiguration
-- Debian-Paket
-- optional eigener APT-Updatekanal
-- Installations- und Einrichtungsassistent
-- Systemprüfung vor Installation und Update
-- Backup und Wiederherstellung
-- Updatekonzept für getrennte Dienste
-- Administrations- und Benutzerhandbuch
+- TOTP-2FA
+- Recovery-Codes
+- 2FA-Richtlinien
+- Passwort-Zurücksetzung
+- Session-Verwaltung
+- WebAuthn/Passkeys als Erweiterung
+
+## Phase 0.8 – Gramps Web / Ahnenforschung
+
+- Gramps-Web-Connector
+- API- und Healthcheck
+- Benutzer-/Rechtezuordnung
+- Personen- und Familiensuche
+- Geburtstage und Gedenktage
+- GEDCOM Import/Export
+
+## Spätere Plattformausbaustufen
+
+- Event-Bus für lose Modulkopplung
+- Manifest-Discovery für externe Module
+- Modulabhängigkeiten und Kompatibilitätsprüfung
+- Entwickler-SDK und Beispielmodule
+- App-Center / Modul-Store
+- Benachrichtigungszentrale
+- PWA / Mobile Nutzung
 
 ## Version 1.0
 
-Stabile Debian-Plattform mit Kleinfamilien- und Großfamilienprofil, Modulverwaltung, Supportmodul, Nachrichtenportal, Kleinanzeigen sowie produktionsreifen Nextcloud- und Mailcow-Connectoren. Das Familienportal läuft als eigener Dienst hinter Nginx; Nextcloud und Mailcow bleiben technisch und betrieblich getrennt.
+Stabile Debian-Plattform mit Kleinfamilien- und Großfamilienprofil, Modulverwaltung, Kalender, Supportmodul, Nachrichtenportal, Kleinanzeigen sowie produktionsreifen Nextcloud- und Mailcow-Connectoren. Externe Dienste bleiben technisch und betrieblich getrennt und werden über standardisierte Connectoren eingebunden.
