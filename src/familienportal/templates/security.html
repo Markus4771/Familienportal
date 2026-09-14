@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Sicherheit · Familienportal{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-start mb-4"><div><p class="text-uppercase small fw-semibold text-primary mb-1">Sicherheit 0.7</p><h1 class="h2 mb-1">Sicherheit</h1><p class="text-secondary mb-0">Zwei-Faktor-Authentifizierung, Recovery-Codes und aktive Sitzungen.</p></div></div>
+{% if request.query_params.get('error') %}<div class="alert alert-danger">{{ request.query_params.get('error') }}</div>{% endif %}
+<div class="row g-4">
+<div class="col-lg-6"><div class="card border-0 shadow-sm h-100"><div class="card-body"><h2 class="h5">Zwei-Faktor-Authentifizierung</h2>
+{% if mfa and mfa.enabled %}<div class="alert alert-success">2FA ist aktiviert.</div>
+<form method="post" action="/security/recovery-codes" class="mb-3"><label class="form-label">Neuen Recovery-Code-Satz erzeugen</label><div class="input-group"><input class="form-control" name="code" placeholder="Aktueller 2FA-Code" required><button class="btn btn-outline-primary">Neu erzeugen</button></div></form>
+<form method="post" action="/security/mfa/disable"><label class="form-label">2FA deaktivieren</label><div class="input-group"><input class="form-control" name="code" placeholder="2FA- oder Recovery-Code" required><button class="btn btn-outline-danger">Deaktivieren</button></div></form>
+{% else %}<p class="text-secondary">2FA ist noch nicht aktiviert.</p><form method="post" action="/security/mfa/start"><button class="btn btn-primary">2FA einrichten</button></form>{% endif %}
+{% if require_admin_mfa and is_admin %}<div class="small text-warning mt-3">Für Administratoren ist 2FA per Richtlinie vorgeschrieben.</div>{% endif %}
+</div></div></div>
+<div class="col-lg-6"><div class="card border-0 shadow-sm h-100"><div class="card-body"><div class="d-flex justify-content-between align-items-center"><h2 class="h5 mb-0">Aktive Sitzungen</h2><form method="post" action="/security/sessions/revoke-others"><button class="btn btn-sm btn-outline-danger">Andere abmelden</button></form></div><div class="list-group list-group-flush mt-3">
+{% for item in sessions %}<div class="list-group-item px-0"><div class="d-flex justify-content-between gap-3"><div><strong>{% if item.id|string == current_session_id %}Diese Sitzung{% else %}Sitzung{% endif %}</strong><div class="small text-secondary">{{ item.user_agent or 'Unbekannter Client' }}</div><div class="small text-secondary">Zuletzt: {{ item.last_seen_at }}{% if item.revoked_at %} · widerrufen{% endif %}</div></div>{% if not item.revoked_at %}<form method="post" action="/security/sessions/{{ item.id }}/revoke"><button class="btn btn-sm btn-outline-secondary">Abmelden</button></form>{% endif %}</div></div>{% endfor %}
+</div></div></div></div>
+</div>
+{% endblock %}
