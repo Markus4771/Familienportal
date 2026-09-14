@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Rollen & Rechte · Familienportal{% endblock %}
+{% block content %}
+<div class="mb-4"><p class="text-uppercase small fw-semibold text-primary mb-1">Sicherheit</p><h1 class="h2">Rollen & Rechte</h1><p class="text-secondary">Berechtigungen werden kommasepariert gespeichert und bilden die Grundlage für die spätere modulgenaue Rechteprüfung.</p></div>
+{% if request.query_params.get('saved') %}<div class="alert alert-success">Berechtigungen wurden gespeichert.</div>{% endif %}
+<div class="row g-3">
+{% for role in roles %}
+<div class="col-xl-6"><div class="card border-0 shadow-sm h-100"><div class="card-body p-4">
+<div class="d-flex justify-content-between align-items-center mb-3"><h2 class="h5 mb-0">{{ role.name }}</h2>{% if role.system_role %}<span class="badge text-bg-light border">Systemrolle</span>{% endif %}</div>
+<form method="post" action="/admin/roles/{{ role.id }}"><label class="form-label">Berechtigungen</label><textarea class="form-control font-monospace" rows="5" name="permissions">{{ role.permissions }}</textarea><div class="form-text">Beispiele: <code>calendar.read</code>, <code>calendar.*</code>, <code>*</code></div><button class="btn btn-outline-primary mt-3">Speichern</button></form>
+</div></div></div>
+{% endfor %}
+</div>
+{% endblock %}
