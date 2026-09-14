@@ -24,11 +24,11 @@ def mfa_qr(request: Request, db: Session = Depends(get_db)):
     if not user or user.status != UserStatus.ACTIVE.value:
         raise HTTPException(status_code=401, detail="Ungültige Sitzung")
     state = get_mfa_state(db, user.id)
-    if not state or not state.encrypted_seed:
+    if not state or state.enabled or not state.encrypted_seed:
         raise HTTPException(status_code=404, detail="Keine laufende 2FA-Einrichtung")
     uri = otpauth_uri(user, decrypt_seed(state.encrypted_seed, settings), settings)
     image = qrcode.make(uri)
     buffer = BytesIO()
     image.save(buffer, format="PNG")
     buffer.seek(0)
-    return StreamingResponse(buffer, media_type="image/png", headers={"Cache-Control": "no-store"})
+    return StreamingResponse(buffer, media_type="image/png", headers={"Cache-Control": "no-store, max-age=0"})
