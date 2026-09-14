@@ -97,14 +97,31 @@
 - bedingte PUT/DELETE-Aufrufe mit ETag
 - API für Bindings, Konflikte und manuellen Sync
 - Migration 0006
-- Parser-Tests für CalDAV/ICS
+
+## 0.5.2 – Kalenderoberfläche und Konfliktauflösung – umgesetzt
+
+- Monatsansicht
+- Wochenansicht
+- Tagesansicht
+- Kalenderfarben
+- Kalenderfilter
+- Termine bearbeiten
+- Termine zeitlich verschieben
+- Termine zwischen Kalendern verschieben
+- bestehende Tombstone-Löschlogik weiterverwenden
+- grafische Konfliktliste
+- Konfliktentscheidung „lokale Version behalten“
+- Konfliktentscheidung „Nextcloud übernehmen“
+- sicherer Remote-Abgleich über aktuelles ETag vor Konfliktauflösung
+- Migration 0007
+- Tests für Ansichtsperioden
 
 ### Nächste Kalender-Ausbaustufe
 
-- grafische Monats-, Wochen- und Tagesansicht
-- komfortable Konfliktauflösung in der GUI
 - automatische zeitgesteuerte Synchronisation
 - serverseitige Erinnerungszustellung
+- optional Drag-and-drop im Browser
+- Einladungen und Teilnehmer
 
 ## Phase 0.6 – Mailcow
 
