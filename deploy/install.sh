@@ -61,7 +61,9 @@ for unit in \
   familienportal-calendar-sync.service \
   familienportal-calendar-sync.timer \
   familienportal-reminder-queue.service \
-  familienportal-reminder-queue.timer; do
+  familienportal-reminder-queue.timer \
+  familienportal-security-cleanup.service \
+  familienportal-security-cleanup.timer; do
   install -o root -g root -m 0644 "$APP_DIR/deploy/systemd/$unit" "$SYSTEMD_DIR/$unit"
 done
 
@@ -69,6 +71,7 @@ systemctl daemon-reload
 systemctl enable familienportal.service
 systemctl enable --now familienportal-calendar-sync.timer
 systemctl enable --now familienportal-reminder-queue.timer
+systemctl enable --now familienportal-security-cleanup.timer
 
 if [[ "$INSTALL_MODE" == "test" ]]; then
   systemctl enable --now familienportal.service
