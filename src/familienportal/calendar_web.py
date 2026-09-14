@@ -39,16 +39,23 @@ def _can_write(user: User) -> bool:
 
 
 def _bootstrap_calendars(db: Session, user: User) -> None:
-    existing = db.scalars(select(Calendar).where(Calendar.family_id == user.family_id)).all()
-    if existing:
-        return
-    db.add_all([
-        Calendar(family_id=user.family_id, name="Familienkalender", slug="familie", kind="family"),
-        Calendar(family_id=user.family_id, owner_user_id=user.id, name=f"{user.display_name} persönlich", slug=f"user-{str(user.id)[:8]}", kind="personal"),
-        Calendar(family_id=user.family_id, name="Geburtstage", slug="geburtstage", kind="birthday"),
-        Calendar(family_id=user.family_id, name="Veranstaltungen", slug="veranstaltungen", kind="event"),
-    ])
-    db.commit()
+    by_slug = {item.slug: item for item in db.scalars(select(Calendar).where(Calendar.family_id == user.family_id)).all()}
+    defaults = [
+        ("familie", "Familienkalender", "family"),
+        ("geburtstage", "Geburtstage", "birthday"),
+        ("veranstaltungen", "Veranstaltungen", "event"),
+    ]
+    changed = False
+    for slug, name, kind in defaults:
+        if slug not in by_slug:
+            db.add(Calendar(family_id=user.family_id, name=name, slug=slug, kind=kind))
+            changed = True
+    personal_slug = f"user-{str(user.id)[:8]}"
+    if personal_slug not in by_slug:
+        db.add(Calendar(family_id=user.family_id, owner_user_id=user.id, name=f"{user.display_name} persönlich", slug=personal_slug, kind="personal"))
+        changed = True
+    if changed:
+        db.commit()
 
 
 @router.get("/calendar", response_class=HTMLResponse)
