@@ -31,11 +31,13 @@ python3 -m venv "$APP_DIR/.venv"
 if [[ ! -f "$CONFIG_DIR/familienportal.env" ]]; then
   cp "$APP_DIR/.env.example" "$CONFIG_DIR/familienportal.env"
   SESSION_SECRET=$(python3 -c 'import secrets; print(secrets.token_urlsafe(48))')
+  SECURITY_SECRET=$(python3 -c 'import secrets; print(secrets.token_urlsafe(48))')
   sed -i "s|CHANGE_ME_WITH_A_LONG_RANDOM_VALUE|${SESSION_SECRET}|" "$CONFIG_DIR/familienportal.env"
+  sed -i "s|CHANGE_ME_WITH_ANOTHER_LONG_RANDOM_VALUE|${SECURITY_SECRET}|" "$CONFIG_DIR/familienportal.env"
   chmod 0640 "$CONFIG_DIR/familienportal.env"
   chown root:familienportal "$CONFIG_DIR/familienportal.env"
   echo "Konfiguration angelegt: $CONFIG_DIR/familienportal.env"
-  echo "Bitte Datenbank, Domain und Proxy-IP dort anpassen."
+  echo "Bitte Datenbank, Domain, Proxy-IP und SMTP dort anpassen."
 fi
 
 for unit in \
