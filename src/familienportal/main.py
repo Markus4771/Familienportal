@@ -17,6 +17,9 @@ from familienportal.calendar_ui_web import router as calendar_ui_router
 from familienportal.calendar_web import router as calendar_router
 from familienportal.config import get_settings
 from familienportal.database import engine
+from familienportal.mailcow_alias_api import router as mailcow_alias_router
+from familienportal.mailcow_mailbox_api import router as mailcow_mailbox_router
+from familienportal.mailcow_mapping_api import router as mailcow_mapping_router
 from familienportal.mailcow_web import router as mailcow_router
 from familienportal.module_web import router as module_router
 from familienportal.nextcloud_management_web import router as nextcloud_management_router
@@ -36,6 +39,9 @@ app.include_router(platform_router)
 app.include_router(nextcloud_router)
 app.include_router(nextcloud_management_router)
 app.include_router(mailcow_router)
+app.include_router(mailcow_mapping_router)
+app.include_router(mailcow_mailbox_router)
+app.include_router(mailcow_alias_router)
 app.include_router(calendar_router)
 app.include_router(calendar_ui_router)
 app.include_router(calendar_conflicts_router)
