@@ -52,5 +52,6 @@ def test_production_accepts_explicit_security_secrets():
         environment="production",
         session_secret_key="session-secret-for-unit-tests",
         security_encryption_key="security-secret-for-unit-tests",
+        secure_cookies=True,
     )
     assert settings.environment == "production"
