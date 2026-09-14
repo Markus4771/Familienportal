@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Sicherheit · Familienportal{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-start mb-4"><div><p class="text-uppercase small fw-semibold text-primary mb-1">Sicherheit 0.7</p><h1 class="h2 mb-1">Sicherheit</h1><p class="text-secondary mb-0">Zwei-Faktor-Authentifizierung, Recovery-Codes und aktive Sitzungen.</p></div></div>
+<div class="d-flex justify-content-between align-items-start mb-4"><div><p class="text-uppercase small fw-semibold text-primary mb-1">Sicherheit 0.7.1</p><h1 class="h2 mb-1">Sicherheit</h1><p class="text-secondary mb-0">2FA, Passkeys, Recovery-Codes und aktive Sitzungen.</p></div><div class="d-flex gap-2"><a class="btn btn-outline-primary" href="/security/passkeys"><i class="bi bi-key me-1"></i>Passkeys</a>{% if is_admin %}<a class="btn btn-outline-danger" href="/admin/security/mfa-reset">2FA-Notfallreset</a>{% endif %}</div></div>
 {% if request.query_params.get('error') %}<div class="alert alert-danger">{{ request.query_params.get('error') }}</div>{% endif %}
 <div class="row g-4">
 <div class="col-lg-6"><div class="card border-0 shadow-sm h-100"><div class="card-body"><h2 class="h5">Zwei-Faktor-Authentifizierung</h2>
