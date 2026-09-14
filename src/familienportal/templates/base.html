@@ -20,6 +20,7 @@
         {% for module in navigation_modules|default([]) %}
         <a class="nav-link" href="{{ module.route }}"><i class="bi {{ module.icon }} me-1"></i>{{ module.name }}</a>
         {% endfor %}
+        <a class="nav-link" href="/security"><i class="bi bi-shield-check me-1"></i>Sicherheit</a>
         {% if is_admin %}
         <a class="nav-link" href="/platform"><i class="bi bi-boxes me-1"></i>Plattform</a>
         <a class="nav-link" href="/admin"><i class="bi bi-people-gear me-1"></i>Benutzer</a>
