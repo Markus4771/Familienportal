@@ -1,0 +1,45 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Test
+        env:
+          FAMILIENPORTAL_DATABASE_URL: sqlite:///./release-ci.db
+          FAMILIENPORTAL_SESSION_SECRET_KEY: release-ci-session-secret
+          FAMILIENPORTAL_SECURITY_ENCRYPTION_KEY: release-ci-security-key
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e '.[dev]'
+          pytest
+
+      - name: Build source archive
+        run: |
+          mkdir -p dist release-src
+          rsync -a --exclude '.git' --exclude '.venv' --exclude 'dist' --exclude 'release-src' ./ release-src/
+          tar -C release-src -czf "dist/familienportal-${GITHUB_REF_NAME}.tar.gz" .
+          sha256sum "dist/familienportal-${GITHUB_REF_NAME}.tar.gz" > "dist/familienportal-${GITHUB_REF_NAME}.tar.gz.sha256"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/* --title "Familienportal $GITHUB_REF_NAME" --generate-notes
