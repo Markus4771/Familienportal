@@ -20,6 +20,7 @@ class Calendar(Base):
     name: Mapped[str] = mapped_column(String(160))
     slug: Mapped[str] = mapped_column(String(100))
     kind: Mapped[str] = mapped_column(String(40), default="family")
+    color: Mapped[str] = mapped_column(String(20), default="#0d6efd")
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     is_visible: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
