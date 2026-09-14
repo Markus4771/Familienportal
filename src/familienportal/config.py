@@ -1,7 +1,7 @@
 from functools import lru_cache
 from typing import Annotated
 
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
@@ -55,6 +55,15 @@ class Settings(BaseSettings):
     @classmethod
     def normalize_public_url(cls, value: str) -> str:
         return value.rstrip("/")
+
+    @model_validator(mode="after")
+    def validate_production_secrets(self) -> "Settings":
+        if self.environment.lower() == "production":
+            if self.session_secret_key == "development-only-change-me":
+                raise ValueError("FAMILIENPORTAL_SESSION_SECRET_KEY muss in Produktion gesetzt sein")
+            if self.security_encryption_key == "development-only-change-security-key":
+                raise ValueError("FAMILIENPORTAL_SECURITY_ENCRYPTION_KEY muss in Produktion gesetzt sein")
+        return self
 
     @property
     def forwarded_allow_ips(self) -> str:
