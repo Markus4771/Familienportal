@@ -1,0 +1,17 @@
+[Unit]
+Description=Familienportal Security Cleanup
+After=network-online.target familienportal.service
+
+[Service]
+Type=oneshot
+User=familienportal
+Group=familienportal
+WorkingDirectory=/opt/familienportal
+EnvironmentFile=/etc/familienportal/familienportal.env
+ExecStart=/opt/familienportal/.venv/bin/python -m familienportal.security_cleanup
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/familienportal
