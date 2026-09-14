@@ -1,0 +1,102 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+REPOSITORY=${FAMILIENPORTAL_GITHUB_REPOSITORY:-Markus4771/Familienportal}
+API="https://api.github.com/repos/${REPOSITORY}/releases/latest"
+APP_DIR=${FAMILIENPORTAL_APP_DIR:-/opt/familienportal}
+TOKEN=${GITHUB_TOKEN:-${FAMILIENPORTAL_GITHUB_TOKEN:-}}
+
+headers=(-H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28")
+if [[ -n "$TOKEN" ]]; then
+  headers+=(-H "Authorization: Bearer $TOKEN")
+fi
+
+need_tools() {
+  command -v curl >/dev/null || { echo "curl fehlt" >&2; exit 2; }
+  command -v python3 >/dev/null || { echo "python3 fehlt" >&2; exit 2; }
+  command -v sha256sum >/dev/null || { echo "sha256sum fehlt" >&2; exit 2; }
+}
+
+release_json() {
+  curl --fail --silent --show-error -L "${headers[@]}" "$API"
+}
+
+field() {
+  local key=$1
+  python3 -c 'import json,sys; data=json.load(sys.stdin); print(data.get(sys.argv[1], ""))' "$key"
+}
+
+asset_url() {
+  local name=$1
+  python3 -c 'import json,sys
+name=sys.argv[1]
+data=json.load(sys.stdin)
+for asset in data.get("assets", []):
+    if asset.get("name") == name:
+        print(asset.get("browser_download_url", ""))
+        break' "$name"
+}
+
+installed_version() {
+  if [[ -x "$APP_DIR/.venv/bin/python" ]]; then
+    "$APP_DIR/.venv/bin/python" -c 'import familienportal; print(familienportal.__version__)' 2>/dev/null || true
+  fi
+}
+
+check_release() {
+  need_tools
+  local json tag current
+  json=$(release_json)
+  tag=$(printf '%s' "$json" | field tag_name)
+  current=$(installed_version)
+  echo "Installiert: ${current:-nicht installiert}"
+  echo "Release:     ${tag:-unbekannt}"
+  if [[ -n "$current" && "v$current" == "$tag" ]]; then
+    echo "Status: aktuell"
+    return 0
+  fi
+  echo "Status: Update verfügbar"
+  return 10
+}
+
+download_release() {
+  need_tools
+  local destination=$1 json tag archive checksum archive_url checksum_url
+  json=$(release_json)
+  tag=$(printf '%s' "$json" | field tag_name)
+  [[ -n "$tag" ]] || { echo "Kein Release gefunden." >&2; exit 3; }
+  archive="familienportal-${tag}.tar.gz"
+  checksum="${archive}.sha256"
+  archive_url=$(printf '%s' "$json" | asset_url "$archive")
+  checksum_url=$(printf '%s' "$json" | asset_url "$checksum")
+  [[ -n "$archive_url" && -n "$checksum_url" ]] || { echo "Release-Assets fehlen für $tag." >&2; exit 3; }
+  mkdir -p "$destination"
+  curl --fail --silent --show-error -L "${headers[@]}" -o "$destination/$archive" "$archive_url"
+  curl --fail --silent --show-error -L "${headers[@]}" -o "$destination/$checksum" "$checksum_url"
+  (cd "$destination" && sha256sum -c "$checksum")
+  mkdir -p "$destination/source"
+  tar -C "$destination/source" -xzf "$destination/$archive"
+  printf '%s\n' "$tag"
+}
+
+update_release() {
+  [[ ${EUID} -eq 0 ]] || { echo "Update bitte als root ausführen." >&2; exit 1; }
+  local tmp tag
+  tmp=$(mktemp -d)
+  trap 'rm -rf "$tmp"' EXIT
+  tag=$(download_release "$tmp")
+  echo "Installiere $tag"
+  if command -v familienportalctl >/dev/null; then
+    familienportalctl update "$tmp/source"
+  elif [[ -x "$APP_DIR/deploy/familienportalctl" ]]; then
+    "$APP_DIR/deploy/familienportalctl" update "$tmp/source"
+  else
+    FAMILIENPORTAL_INSTALL_MODE=${FAMILIENPORTAL_INSTALL_MODE:-test} bash "$tmp/source/deploy/install.sh"
+  fi
+}
+
+case ${1:-check} in
+  check) check_release ;;
+  update) update_release ;;
+  *) echo "Verwendung: $0 {check|update}" >&2; exit 2 ;;
+esac
