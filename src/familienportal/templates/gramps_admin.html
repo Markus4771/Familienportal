@@ -12,6 +12,12 @@
 {% if state %}<form method="post" action="/platform/gramps/health" class="mt-2"><button class="btn btn-outline-primary">Verbindung testen</button></form>{% endif %}
 <p class="small text-secondary mt-2">Status: {{ state.health_status if state else 'nicht konfiguriert' }}</p>
 </div></div>
+<div class="card mb-4"><div class="card-body"><h2 class="h5">GEDCOM</h2>
+<p class="text-secondary small">Export wird als Gramps-Task gestartet. Import verändert den verbundenen Stammbaum und ist deshalb nur für Administratoren verfügbar.</p>
+<button class="btn btn-outline-primary" id="ged-export" type="button">GEDCOM-Export starten</button>
+<form method="post" action="/platform/gramps/import/gedcom" enctype="multipart/form-data" class="mt-3"><div class="input-group"><input class="form-control" type="file" name="file" accept=".ged,.gedcom" required><button class="btn btn-outline-danger">GEDCOM importieren</button></div></form>
+<div id="ged-status" class="small text-secondary mt-2"></div>
+</div></div>
 <div class="card"><div class="card-body"><h2 class="h5">Zuordnung</h2>
 <form method="post" action="/platform/gramps/mapping" class="row g-2">
 <div class="col-md-3"><select class="form-select" name="user_id">{% for p in users %}<option value="{{ p.id }}">{{ p.display_name }}</option>{% endfor %}</select></div>
@@ -21,4 +27,24 @@
 <div class="col-md-1"><button class="btn btn-primary">OK</button></div>
 </form>
 </div></div>
+<script>
+const exportButton=document.getElementById('ged-export');
+const exportStatus=document.getElementById('ged-status');
+exportButton?.addEventListener('click',async()=>{
+  exportStatus.textContent='Export wird gestartet…';
+  const start=await fetch('/platform/gramps/export/gedcom',{method:'POST'});
+  const data=await start.json();
+  const taskId=data?.task?.id;
+  if(!taskId){exportStatus.textContent='Export konnte nicht gestartet werden.';return;}
+  for(let i=0;i<60;i++){
+    await new Promise(r=>setTimeout(r,1000));
+    const response=await fetch('/platform/gramps/tasks/'+encodeURIComponent(taskId));
+    const task=await response.json();
+    const path=task?.result_object?.url || task?.result?.url;
+    if(path){location.href='/platform/gramps/export/file?path='+encodeURIComponent(path);exportStatus.textContent='Export fertig.';return;}
+    if(task?.state==='FAILURE'){exportStatus.textContent='Export fehlgeschlagen.';return;}
+  }
+  exportStatus.textContent='Export läuft noch. Bitte später erneut versuchen.';
+});
+</script>
 {% endblock %}
