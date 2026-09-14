@@ -25,8 +25,6 @@ class HealthResult:
 
 
 class PortalModule(ABC):
-    """Base contract for independently developed Familienportal modules."""
-
     manifest: ExtensionManifest
 
     @abstractmethod
@@ -35,10 +33,27 @@ class PortalModule(ABC):
 
 
 class Connector(ABC):
-    """Base contract for external service integrations."""
-
     manifest: ExtensionManifest
 
     @abstractmethod
     async def health(self) -> HealthResult:
         """Check whether the configured external service is reachable."""
+
+
+BUILTIN_MODULES: dict[str, dict[str, object]] = {
+    "calendar": {"name": "Kalender", "icon": "bi-calendar3", "description": "Familien-, Geburtstags- und Veranstaltungskalender", "default": True, "menu": True},
+    "news": {"name": "Nachrichten", "icon": "bi-newspaper", "description": "Familiennachrichten und Mitteilungen", "default": False, "menu": True},
+    "marketplace": {"name": "Kleinanzeigen", "icon": "bi-shop", "description": "Suchen, Tauschen und Verschenken", "default": False, "menu": True},
+    "support": {"name": "Support", "icon": "bi-life-preserver", "description": "Tickets, Hilfe und Wissensdatenbank", "default": False, "menu": True},
+    "genealogy": {"name": "Ahnenforschung", "icon": "bi-diagram-3", "description": "Integration von Gramps Web", "default": False, "menu": True},
+    "documents": {"name": "Dokumente", "icon": "bi-file-earmark-text", "description": "Dokumente und Familienordner", "default": False, "menu": True},
+}
+
+BUILTIN_CONNECTORS: dict[str, dict[str, object]] = {
+    "nextcloud": {"name": "Nextcloud", "icon": "bi-cloud", "description": "Dateien, Kalender und Kontakte"},
+    "mailcow": {"name": "Mailcow", "icon": "bi-envelope", "description": "E-Mail, Postfächer und Verteiler"},
+    "gramps": {"name": "Gramps Web", "icon": "bi-diagram-3", "description": "Ahnenforschung und Stammbaum"},
+    "homeassistant": {"name": "Home Assistant", "icon": "bi-house-gear", "description": "Smart-Home-Integration"},
+    "paperless": {"name": "Paperless-ngx", "icon": "bi-archive", "description": "Dokumentenarchiv"},
+    "immich": {"name": "Immich", "icon": "bi-images", "description": "Familienfotos und Alben"},
+}
