@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Form, Request
 from sqlalchemy.orm import Session
 
 from familienportal.database import get_db
-from familienportal.mailcow_management import provision_mailbox, update_mailbox
+from familienportal.mailcow_management import provision_mailbox, reset_mailbox_password, update_mailbox
 from familienportal.mailcow_service import get_mailcow_client
 from familienportal.platform_web import _admin
 
@@ -21,3 +21,10 @@ def settings(mailbox: str, request: Request, name: str = Form(""), quota_mb: int
     admin = _admin(request, db)
     update_mailbox(get_mailcow_client(db, admin.family_id), mailbox, name=name.strip() or None, quota_mb=quota_mb, active=active)
     return {"status": "updated", "mailbox": mailbox}
+
+
+@router.post("/{mailbox}/password")
+def password(mailbox: str, request: Request, new_password: str = Form(...), db: Session = Depends(get_db)):
+    admin = _admin(request, db)
+    reset_mailbox_password(get_mailcow_client(db, admin.family_id), mailbox, new_password)
+    return {"status": "password_updated", "mailbox": mailbox}
