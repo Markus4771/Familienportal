@@ -82,7 +82,7 @@ async def capabilities() -> dict[str, object]:
         "core": ["families", "households", "users", "roles", "sessions", "audit", "platform_management"],
         "connectors": ["nextcloud", "mailcow", "gramps", "homeassistant", "paperless", "immich"],
         "nextcloud": ["health", "users", "user_mapping", "groups", "group_mapping", "shares", "family_folders", "webdav", "caldav", "carddav", "diagnostics"],
-        "mailcow": ["health", "domains", "mailboxes", "mailbox_create", "mailbox_update", "aliases", "alias_create", "alias_update", "user_mapping", "quota_summary", "sogo_link"],
+        "mailcow": ["health", "domains", "mailboxes", "mailbox_create", "mailbox_update", "mailbox_password_reset", "aliases", "alias_create", "alias_update", "alias_delete", "distribution_lists", "user_mapping", "user_unmapping", "quota_summary", "sogo_link"],
         "calendar": ["personal", "family", "birthdays", "events", "recurrence", "reminders", "ics_import", "ics_export", "month_view", "week_view", "day_view", "calendar_colors", "filters", "event_edit", "event_move", "caldav_bindings", "caldav_pull", "caldav_push", "caldav_delete", "caldav_conflicts", "conflict_resolution", "sync_tokens", "etags", "automatic_sync", "reminder_queue"],
         "modules": ["calendar", "news", "marketplace", "support", "genealogy", "documents"],
     }
