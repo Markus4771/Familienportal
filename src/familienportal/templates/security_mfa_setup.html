@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}2FA einrichten · Familienportal{% endblock %}
+{% block content %}
+<div class="row justify-content-center"><div class="col-lg-7"><div class="card border-0 shadow-sm"><div class="card-body p-4">
+<h1 class="h4">2FA einrichten</h1><p class="text-secondary">Den Schlüssel in einer TOTP-App hinterlegen. Danach einen aktuellen sechsstelligen Code bestätigen.</p>
+{% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
+<div class="mb-3"><label class="form-label">Manueller Schlüssel</label><input class="form-control font-monospace" readonly value="{{ seed }}"></div>
+<div class="mb-3"><label class="form-label">Authenticator-URI</label><textarea class="form-control font-monospace" rows="3" readonly>{{ otpauth_uri }}</textarea></div>
+<form method="post" action="/security/mfa/confirm"><label class="form-label">Bestätigungscode</label><div class="input-group"><input class="form-control" name="code" inputmode="numeric" autocomplete="one-time-code" required><button class="btn btn-primary">2FA aktivieren</button></div></form>
+</div></div></div></div>
+{% endblock %}
