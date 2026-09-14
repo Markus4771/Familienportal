@@ -31,7 +31,7 @@ class NextcloudClient:
 
     def _headers(self, *, ocs: bool = False, content_type: str | None = None) -> dict[str, str]:
         token = base64.b64encode(f"{self.username}:{self.password}".encode()).decode()
-        headers = {"Authorization": f"Basic {token}", "User-Agent": "Familienportal/0.4"}
+        headers = {"Authorization": f"Basic {token}", "User-Agent": "Familienportal/0.4.1"}
         if ocs:
             headers["OCS-APIRequest"] = "true"
             headers["Accept"] = "application/json"
@@ -40,8 +40,7 @@ class NextcloudClient:
         return headers
 
     def _request(self, method: str, path: str, *, data: bytes | None = None, ocs: bool = False) -> tuple[int, bytes, dict[str, str]]:
-        url = f"{self.base_url}{path}"
-        request = Request(url, method=method, data=data, headers=self._headers(ocs=ocs))
+        request = Request(f"{self.base_url}{path}", method=method, data=data, headers=self._headers(ocs=ocs))
         try:
             with urlopen(request, timeout=self.timeout) as response:
                 return response.status, response.read(), dict(response.headers.items())
@@ -74,7 +73,8 @@ class NextcloudClient:
             if status.get("maintenance"):
                 return NextcloudHealth(False, "Nextcloud befindet sich im Wartungsmodus.", status.get("version"), status.get("productname"))
             user = self.current_user()
-            return NextcloudHealth(True, f"Nextcloud erreichbar; Anmeldung als {user.get('display-name') or user.get('id') or self.username} erfolgreich.", status.get("version"), status.get("productname"))
+            label = user.get("display-name") or user.get("id") or self.username
+            return NextcloudHealth(True, f"Nextcloud erreichbar; Anmeldung als {label} erfolgreich.", status.get("version"), status.get("productname"))
         except (NextcloudError, ValueError, json.JSONDecodeError) as exc:
             return NextcloudHealth(False, str(exc))
 
@@ -104,15 +104,16 @@ class NextcloudClient:
             "carddav": f"{self.base_url}/remote.php/dav/addressbooks/users/{user}/",
         }
 
-    def list_files(self, relative_path: str = "", depth: int = 1) -> list[dict[str, str | None]]:
+    def _dav_path(self, relative_path: str = "") -> str:
         user = quote(self.username, safe="")
         path = relative_path.strip("/")
         suffix = f"/{quote(path, safe='/')}" if path else ""
-        url_path = f"/remote.php/dav/files/{user}{suffix}/"
-        body = b'''<?xml version="1.0" encoding="utf-8" ?>
-<d:propfind xmlns:d="DAV:"><d:prop><d:displayname/><d:getcontentlength/><d:getcontenttype/><d:getlastmodified/><d:resourcetype/></d:prop></d:propfind>'''
+        return f"/remote.php/dav/files/{user}{suffix}/"
+
+    def list_files(self, relative_path: str = "", depth: int = 1) -> list[dict[str, str | None]]:
+        body = b'<?xml version="1.0" encoding="utf-8" ?><d:propfind xmlns:d="DAV:"><d:prop><d:displayname/><d:getcontentlength/><d:getcontenttype/><d:getlastmodified/></d:prop></d:propfind>'
         request = Request(
-            f"{self.base_url}{url_path}",
+            f"{self.base_url}{self._dav_path(relative_path)}",
             method="PROPFIND",
             data=body,
             headers={**self._headers(content_type="application/xml; charset=utf-8"), "Depth": str(depth)},
@@ -140,3 +141,32 @@ class NextcloudClient:
                 "modified": prop.findtext("d:getlastmodified", default=None, namespaces=ns),
             })
         return items
+
+    def create_folder(self, relative_path: str) -> None:
+        path = relative_path.strip("/")
+        if not path or any(part in {".", ".."} for part in path.split("/")):
+            raise NextcloudError("Ungültiger Ordnerpfad.")
+        request = Request(f"{self.base_url}{self._dav_path(path)}", method="MKCOL", headers=self._headers())
+        try:
+            with urlopen(request, timeout=self.timeout) as response:
+                if response.status not in {201, 405}:
+                    raise NextcloudError(f"WebDAV MKCOL HTTP {response.status}")
+        except HTTPError as exc:
+            if exc.code != 405:
+                raise NextcloudError(f"WebDAV MKCOL HTTP {exc.code}") from exc
+        except URLError as exc:
+            raise NextcloudError(f"WebDAV-Verbindung fehlgeschlagen: {exc.reason}") from exc
+
+    def diagnostics(self) -> dict[str, str]:
+        results: dict[str, str] = {}
+        health = self.health()
+        results["ocs"] = "ok" if health.healthy else health.message
+        try:
+            self.list_files(depth=0)
+            results["webdav"] = "ok"
+        except NextcloudError as exc:
+            results["webdav"] = str(exc)
+        for name, url in self.dav_endpoints().items():
+            if name != "webdav":
+                results[name] = url
+        return results
