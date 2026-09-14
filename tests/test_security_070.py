@@ -1,3 +1,6 @@
+import pytest
+from pydantic import ValidationError
+
 from familienportal.auth_models import UserMfaState
 from familienportal.auth_security import (
     consume_recovery_code,
@@ -37,3 +40,17 @@ def test_hash_verifier_is_stable_and_not_plaintext():
     value = "example-token"
     assert hash_verifier(value) == hash_verifier(value)
     assert hash_verifier(value) != value
+
+
+def test_production_rejects_default_security_secrets():
+    with pytest.raises(ValidationError):
+        Settings(environment="production")
+
+
+def test_production_accepts_explicit_security_secrets():
+    settings = Settings(
+        environment="production",
+        session_secret_key="session-secret-for-unit-tests",
+        security_encryption_key="security-secret-for-unit-tests",
+    )
+    assert settings.environment == "production"
