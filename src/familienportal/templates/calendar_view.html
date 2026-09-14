@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Kalenderansicht · Familienportal{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+  <div><p class="text-uppercase small fw-semibold text-primary mb-1">Kalender 0.5.2</p><h1 class="h2 mb-0">{{ title }}</h1></div>
+  <div class="btn-group"><a class="btn btn-outline-secondary" href="/calendar/view?mode={{ mode }}&at={{ prev_at }}">‹</a><a class="btn btn-outline-secondary" href="/calendar/view?mode={{ mode }}">Heute</a><a class="btn btn-outline-secondary" href="/calendar/view?mode={{ mode }}&at={{ next_at }}">›</a></div>
+</div>
+<div class="row g-4">
+<div class="col-xl-9">
+  <div class="d-flex gap-2 mb-3"><a class="btn {% if mode == 'month' %}btn-primary{% else %}btn-outline-primary{% endif %}" href="/calendar/view?mode=month&at={{ anchor }}">Monat</a><a class="btn {% if mode == 'week' %}btn-primary{% else %}btn-outline-primary{% endif %}" href="/calendar/view?mode=week&at={{ anchor }}">Woche</a><a class="btn {% if mode == 'day' %}btn-primary{% else %}btn-outline-primary{% endif %}" href="/calendar/view?mode=day&at={{ anchor }}">Tag</a><a class="btn btn-outline-secondary" href="/calendar">Listenansicht</a></div>
+  <div class="row g-2 {% if mode == 'month' %}row-cols-7{% elif mode == 'week' %}row-cols-7{% else %}row-cols-1{% endif %}">
+  {% for day in days %}
+    <div class="col"><div class="card border-0 shadow-sm h-100"><div class="card-body p-2"><div class="small fw-semibold mb-2">{{ day.date.strftime('%a %d.%m.') }}</div>{% for event in day.events %}{% set cal = cal_by_id.get(event.calendar_id) %}<div class="rounded p-2 mb-1 text-white small" style="background: {{ cal.color if cal else '#0d6efd' }}"><div class="fw-semibold">{{ event.title }}</div><div>{{ event.starts_at.strftime('%H:%M') }}{% if event.all_day %} · ganztägig{% endif %}</div><div class="mt-1"><a class="link-light" href="/calendar/events/{{ event.id }}/edit">Bearbeiten</a></div></div>{% endfor %}</div></div></div>
+  {% endfor %}
+  </div>
+</div>
+<div class="col-xl-3">
+  <div class="card border-0 shadow-sm mb-3"><div class="card-body"><h2 class="h6">Filter</h2><form method="get" action="/calendar/view"><input type="hidden" name="mode" value="{{ mode }}"><input type="hidden" name="at" value="{{ anchor }}"><select class="form-select mb-2" name="calendar_id"><option value="">Alle Kalender</option>{% for calendar in calendars %}<option value="{{ calendar.id }}" {% if selected_calendar_id == calendar.id %}selected{% endif %}>{{ calendar.name }}</option>{% endfor %}</select><button class="btn btn-outline-primary w-100">Filtern</button></form></div></div>
+  <div class="card border-0 shadow-sm"><div class="card-body"><h2 class="h6">Kalenderfarben</h2>{% for calendar in calendars %}<form method="post" action="/calendar/calendars/{{ calendar.id }}/appearance" class="d-flex align-items-center gap-2 mb-2"><input type="color" class="form-control form-control-color" name="color" value="{{ calendar.color }}"><span class="small flex-grow-1">{{ calendar.name }}</span>{% if can_write %}<button class="btn btn-sm btn-outline-secondary">OK</button>{% endif %}</form>{% endfor %}</div></div>
+</div>
+</div>
+{% endblock %}
