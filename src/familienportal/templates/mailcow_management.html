@@ -2,7 +2,7 @@
 {% block title %}Mailcow Verwaltung · Familienportal{% endblock %}
 {% block content %}
 <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-4">
-  <div><p class="text-uppercase small fw-semibold text-primary mb-1">Mailcow 0.6.1</p><h1 class="h2 mb-1">Mailcow-Verwaltung</h1><p class="text-secondary mb-0">Postfächer, Portal-Zuordnungen, Aliase und Quotas.</p></div>
+  <div><p class="text-uppercase small fw-semibold text-primary mb-1">Mailcow 0.6.2</p><h1 class="h2 mb-1">Mailcow-Verwaltung</h1><p class="text-secondary mb-0">Postfächer, Portal-Zuordnungen, Verteiler, Passwörter und Quotas.</p></div>
   <div class="d-flex gap-2">{% if sogo_url %}<a class="btn btn-outline-primary" href="{{ sogo_url }}" target="_blank" rel="noopener">SOGo / Webmail</a>{% endif %}<a class="btn btn-outline-secondary" href="/platform/mailcow">Übersicht</a></div>
 </div>
 {% if error %}<div class="alert alert-warning">{{ error }}</div>{% endif %}
@@ -12,7 +12,7 @@
     <form class="mailcow-action" method="post" action="/api/v1/mailcow/mailboxes">
       <input class="form-control mb-2" type="email" name="address" placeholder="name@example.de" required>
       <input class="form-control mb-2" name="name" placeholder="Anzeigename" required>
-      <input class="form-control mb-2" type="password" name="initial_password" placeholder="Startpasswort" autocomplete="new-password" required>
+      <input class="form-control mb-2" type="password" name="initial_password" placeholder="Startpasswort" autocomplete="new-password" minlength="8" required>
       <input class="form-control mb-3" type="number" name="quota_mb" value="3072" min="0" required>
       <button class="btn btn-primary w-100">Postfach anlegen</button>
     </form>
@@ -23,20 +23,25 @@
       <select class="form-select mb-3" name="mailbox" required>{% for item in data.mailboxes %}<option value="{{ item.username }}">{{ item.username }}</option>{% endfor %}</select>
       <button class="btn btn-outline-primary w-100">Zuordnung speichern</button>
     </form>
-    <hr><div class="small">{% for item in users %}<div class="d-flex justify-content-between py-1"><span>{{ item.display_name }}</span><span class="text-secondary">{% if mappings.get(item.id) %}{{ mappings.get(item.id).mailbox }}{% else %}nicht zugeordnet{% endif %}</span></div>{% endfor %}</div>
+    <hr><div class="small">{% for item in users %}<div class="d-flex justify-content-between align-items-center gap-2 py-1"><span>{{ item.display_name }}</span>{% if mappings.get(item.id) %}<span class="text-secondary ms-auto">{{ mappings.get(item.id).mailbox }}</span><form class="mailcow-action" method="post" action="/api/v1/mailcow/mapping/{{ item.id }}/delete"><button class="btn btn-sm btn-outline-danger">Lösen</button></form>{% else %}<span class="text-secondary">nicht zugeordnet</span>{% endif %}</div>{% endfor %}</div>
   </div></div></div>
 </div>
 
-<div class="card border-0 shadow-sm mb-4"><div class="card-body"><h2 class="h5">Postfächer</h2><div class="table-responsive"><table class="table align-middle"><thead><tr><th>Adresse</th><th>Name</th><th>Quota</th><th>Aktiv</th><th>Ändern</th></tr></thead><tbody>
-{% for item in data.mailboxes %}<tr><td>{{ item.username }}</td><td>{{ item.name or '' }}</td><td>{{ item.quota_used or 0 }} / {{ item.quota or 0 }}</td><td>{{ item.active }}</td><td><form class="mailcow-action d-flex gap-2" method="post" action="/api/v1/mailcow/mailboxes/{{ item.username }}/settings"><input class="form-control form-control-sm" name="name" value="{{ item.name or '' }}"><input class="form-control form-control-sm" style="max-width:110px" type="number" name="quota_mb" value="{{ ((item.quota or 0) / 1048576)|int if (item.quota or 0) > 1048576 else (item.quota or 0) }}"><input type="hidden" name="active" value="true"><button class="btn btn-sm btn-outline-secondary">Speichern</button></form></td></tr>{% endfor %}
+<div class="card border-0 shadow-sm mb-4"><div class="card-body"><h2 class="h5">Postfächer</h2><div class="table-responsive"><table class="table align-middle"><thead><tr><th>Adresse</th><th>Name</th><th>Quota</th><th>Aktiv</th><th>Verwaltung</th></tr></thead><tbody>
+{% for item in data.mailboxes %}<tr><td>{{ item.username }}</td><td>{{ item.name or '' }}</td><td>{{ item.quota_used or 0 }} / {{ item.quota or 0 }}</td><td>{{ item.active }}</td><td>
+<div class="d-flex flex-column gap-2">
+<form class="mailcow-action d-flex flex-wrap gap-2" method="post" action="/api/v1/mailcow/mailboxes/{{ item.username }}/settings"><input class="form-control form-control-sm" style="max-width:180px" name="name" value="{{ item.name or '' }}"><input class="form-control form-control-sm" style="max-width:110px" type="number" name="quota_mb" value="{{ ((item.quota or 0) / 1048576)|int if (item.quota or 0) > 1048576 else (item.quota or 0) }}"><select class="form-select form-select-sm" style="max-width:110px" name="active"><option value="true" {% if item.active %}selected{% endif %}>Aktiv</option><option value="false" {% if not item.active %}selected{% endif %}>Inaktiv</option></select><button class="btn btn-sm btn-outline-secondary">Speichern</button></form>
+<form class="mailcow-action d-flex gap-2" method="post" action="/api/v1/mailcow/mailboxes/{{ item.username }}/password"><input class="form-control form-control-sm" style="max-width:220px" type="password" name="new_password" placeholder="Neues Passwort" minlength="8" autocomplete="new-password" required><button class="btn btn-sm btn-outline-warning">Passwort setzen</button></form>
+</div></td></tr>{% endfor %}
 </tbody></table></div></div></div>
 
-<div class="row g-4"><div class="col-lg-5"><div class="card border-0 shadow-sm h-100"><div class="card-body"><h2 class="h5">Alias / Verteiler anlegen</h2><form class="mailcow-action" method="post" action="/api/v1/mailcow/aliases"><input class="form-control mb-2" type="email" name="address" placeholder="familie@example.de" required><input class="form-control mb-3" name="destination" placeholder="ziel@example.de oder mehrere Ziele laut Mailcow" required><button class="btn btn-outline-primary w-100">Alias anlegen</button></form></div></div></div>
-<div class="col-lg-7"><div class="card border-0 shadow-sm h-100"><div class="card-body"><h2 class="h5">Aliase</h2><div class="table-responsive"><table class="table align-middle"><thead><tr><th>Adresse</th><th>Ziel</th><th>Status</th></tr></thead><tbody>{% for item in data.aliases %}<tr><td>{{ item.address }}</td><td>{{ item.goto }}</td><td>{{ item.active }}</td></tr>{% endfor %}</tbody></table></div></div></div></div></div>
+<div class="row g-4"><div class="col-lg-5"><div class="card border-0 shadow-sm h-100"><div class="card-body"><h2 class="h5">Alias / Verteiler anlegen</h2><form class="mailcow-action" method="post" action="/api/v1/mailcow/aliases"><input class="form-control mb-2" type="email" name="address" placeholder="familie@example.de" required><textarea class="form-control mb-2" name="destination" rows="4" placeholder="ziel1@example.de&#10;ziel2@example.de" required></textarea><div class="small text-secondary mb-3">Mehrere Ziele mit Komma, Semikolon oder neuer Zeile trennen.</div><button class="btn btn-outline-primary w-100">Alias / Verteiler anlegen</button></form></div></div></div>
+<div class="col-lg-7"><div class="card border-0 shadow-sm h-100"><div class="card-body"><h2 class="h5">Aliase & Verteiler</h2><div class="table-responsive"><table class="table align-middle"><thead><tr><th>Adresse</th><th>Ziele</th><th>Verwaltung</th></tr></thead><tbody>{% for item in data.aliases %}<tr><td>{{ item.address }}</td><td>{{ item.goto }}</td><td><div class="d-flex flex-column gap-2"><form class="mailcow-action d-flex flex-wrap gap-2" method="post" action="/api/v1/mailcow/aliases/{{ item.id }}/settings"><input class="form-control form-control-sm" style="min-width:260px" name="destination" value="{{ item.goto }}" required><select class="form-select form-select-sm" style="max-width:110px" name="active"><option value="true" {% if item.active %}selected{% endif %}>Aktiv</option><option value="false" {% if not item.active %}selected{% endif %}>Inaktiv</option></select><button class="btn btn-sm btn-outline-secondary">Speichern</button></form><form class="mailcow-action" method="post" action="/api/v1/mailcow/aliases/{{ item.id }}/delete" data-confirm="Alias wirklich löschen?"><button class="btn btn-sm btn-outline-danger">Löschen</button></form></div></td></tr>{% endfor %}</tbody></table></div></div></div></div></div>
 
 <script>
 document.querySelectorAll('.mailcow-action').forEach((form) => form.addEventListener('submit', async (event) => {
   event.preventDefault();
+  if (form.dataset.confirm && !window.confirm(form.dataset.confirm)) return;
   const response = await fetch(form.action, {method: 'POST', body: new FormData(form), credentials: 'same-origin'});
   if (!response.ok) { alert(await response.text()); return; }
   window.location.reload();
