@@ -1,0 +1,11 @@
+[Unit]
+Description=Run Familienportal Gramps calendar sync regularly
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=30min
+Persistent=true
+Unit=familienportal-gramps-calendar-sync.service
+
+[Install]
+WantedBy=timers.target
