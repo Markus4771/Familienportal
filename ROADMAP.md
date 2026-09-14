@@ -206,12 +206,35 @@
 - Debian-Installer aktiviert den Cleanup-Timer
 - Tests für Security-Header sowie Same-Origin-/Cross-Origin-Anfragen
 
-### Nächste Ausbaustufe 0.7.3
+## 0.7.3 – Installation, Updates, Backup und Rollback – umgesetzt
 
-- Installer / Update / Remove als vollständiger Lifecycle
-- Backup vor Updates und Rollback bei Fehlern
-- Release-basierte Installation statt direktem main-Branch
-- Vorbereitung eines Debian-Pakets
+- Lifecycle-Manager `familienportalctl`
+- Status- und Versionsanzeige
+- manuelle Backups
+- automatisches Backup vor jedem Update
+- Anwendung, Konfiguration und Datenverzeichnis im Backup
+- SQLite-Backup und PostgreSQL-Custom-Dump
+- Update aus geprüftem Quellverzeichnis
+- automatische Datenbankmigration beim Update
+- Healthcheck nach Update
+- automatischer Rollback bei fehlgeschlagenem Healthcheck
+- manueller Rollback auf letztes oder bestimmtes Backup
+- Deinstallation mit Datenerhalt
+- vollständige Entfernung über `--purge`
+- Release-Versionserkennung über `familienportal-release`
+- Release-basierte Installation und Updates
+- SHA256-Prüfung von Release-Artefakten
+- GitHub-Release-Workflow für Tags `v*`
+- stabile Versionsnummer wird beim Release aus dem Git-Tag in das Archiv geschrieben
+- Deployment-Skripte werden durch die Pytest-Suite per `bash -n` geprüft
+- keine zusätzliche Datenbankmigration erforderlich
+
+### Nächste Ausbaustufe 0.7.4 / Packaging
+
+- natives Debian-`.deb`-Paket
+- optional signierte Release-Artefakte
+- Backup-Retention und automatische Rotation
+- Update-Kanal stable/beta
 - CSP ohne `unsafe-inline`
 - optional zusätzliche synchronizer CSRF-Tokens
 
