@@ -29,6 +29,15 @@ def save_user_mapping(db: Session, family_id: UUID, user_id: UUID, mailbox: str)
     return item
 
 
+def remove_user_mapping(db: Session, family_id: UUID, user_id: UUID) -> bool:
+    item = db.scalar(select(MailcowUserMapping).where(MailcowUserMapping.family_id == family_id, MailcowUserMapping.user_id == user_id))
+    if not item:
+        return False
+    db.delete(item)
+    db.flush()
+    return True
+
+
 def provision_mailbox(client: MailcowClient, *, address: str, name: str, password: str, quota_mb: int = 3072, force_password_update: bool = True) -> None:
     client.create_mailbox(address=address, name=name, password=password, quota_mb=quota_mb, force_password_update=force_password_update)
 
@@ -37,7 +46,29 @@ def update_mailbox(client: MailcowClient, mailbox: str, *, name: str | None = No
     client.edit_mailbox(mailbox, name=name, quota_mb=quota_mb, active=active)
 
 
+def reset_mailbox_password(client: MailcowClient, mailbox: str, password: str) -> None:
+    if len(password) < 8:
+        raise MailcowError("Das neue Passwort muss mindestens 8 Zeichen lang sein")
+    client.edit_mailbox(mailbox, password=password)
+
+
+def normalize_destinations(value: str) -> str:
+    raw = value.replace(";", ",").replace("\n", ",")
+    items = []
+    for part in raw.split(","):
+        address = part.strip().lower()
+        if not address:
+            continue
+        if "@" not in address:
+            raise MailcowError(f"Ungültige Zieladresse: {address}")
+        if address not in items:
+            items.append(address)
+    if not items:
+        raise MailcowError("Mindestens eine Zieladresse ist erforderlich")
+    return ",".join(items)
+
+
 def add_alias(client: MailcowClient, address: str, destination: str) -> None:
-    if not address.strip() or not destination.strip():
-        raise MailcowError("Alias und Ziel müssen angegeben werden")
-    client.create_alias(address, destination)
+    if not address.strip():
+        raise MailcowError("Alias muss angegeben werden")
+    client.create_alias(address.strip().lower(), normalize_destinations(destination))
