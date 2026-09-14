@@ -1,3 +1,3 @@
 """Familienportal application package."""
 
-__version__ = "0.8.0-dev"
+__version__ = "0.8.1-dev"
