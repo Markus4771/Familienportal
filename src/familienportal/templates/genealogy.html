@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Ahnenforschung · Familienportal{% endblock %}
+{% block content %}
+<h1 class="h2 mb-3">Ahnenforschung</h1>
+<p class="text-secondary">Gramps Web durchsuchen und Familienbezüge anzeigen.</p>
+{% if is_admin %}<p><a class="btn btn-outline-secondary" href="/platform/gramps">Gramps Web verwalten</a></p>{% endif %}
+{% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
+{% if not state or not state.enabled %}<div class="alert alert-warning">Gramps Web ist noch nicht aktiviert.</div>{% else %}
+<form method="get" action="/genealogy" class="mb-4"><div class="input-group"><input class="form-control" name="q" value="{{ query }}" placeholder="Person suchen"><button class="btn btn-primary">Suchen</button></div></form>
+{% endif %}
+{% if mapping %}<p class="small text-secondary">Gramps-Zuordnung: {{ mapping.gramps_username or '-' }} · {{ mapping.gramps_role }}</p>{% endif %}
+<div class="list-group">
+{% for item in results %}<div class="list-group-item"><strong>{{ item.name or item.display_name or item.gramps_id or 'Person' }}</strong>{% if item.gramps_id %}<div class="small text-secondary">{{ item.gramps_id }}</div>{% endif %}</div>{% endfor %}
+</div>
+{% endblock %}
