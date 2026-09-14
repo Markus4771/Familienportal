@@ -68,16 +68,29 @@
 - Audit für Zuordnungen und Ordneranlage
 - Migration 0004 für Nextcloud-Zuordnungen
 
-## Phase 0.5 – Kalenderplattform
+## 0.5.0 – Kalenderplattform – umgesetzt
 
-- persönlicher Kalender
+- persönlicher Kalender je Benutzer
 - Familienkalender
-- Geburtstagskalender
+- Geburtstags-, Jahrestags- und Gedenktagsverwaltung
 - Veranstaltungskalender
-- wiederkehrende Termine
-- Erinnerungen
-- Nextcloud-/CalDAV-Anbindung
-- ICS Import/Export
+- zusätzliche Kalender für Schule, Arbeit und Verein
+- Termine mit Beschreibung, Ort und Kategorie
+- wiederkehrende Termine über RRULE
+- Erinnerungsminuten und ICS-VALARM
+- ICS Export
+- ICS Import mit UID-Duplikatschutz
+- Nextcloud-CalDAV-Verbindungstest
+- Erkennung vorhandener Nextcloud-Kalender über CalDAV
+- Migration 0005 für Kalender, Termine und Geburtstage
+
+### Noch nicht Bestandteil von 0.5.0
+
+- vollautomatische bidirektionale CalDAV-Synchronisation
+- serverseitige Zustellung von Erinnerungsbenachrichtigungen
+- grafische Monats-/Wochenansicht mit Drag-and-drop
+
+Diese Punkte bauen auf der jetzt vorhandenen Kalenderdatenbasis auf und können als 0.5.x-Erweiterungen umgesetzt werden.
 
 ## Phase 0.6 – Mailcow
 
