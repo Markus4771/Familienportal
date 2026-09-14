@@ -17,6 +17,8 @@
 
 Passkeys werden unter `/security/passkeys` verwaltet. Die Anmeldung erfolgt auf `/login` über „Mit Passkey anmelden“. Die E-Mail-Adresse wird vor dem Passkey-Dialog eingegeben; dadurch arbeitet 0.7.1 mit nicht-discoverable und discoverable Credentials gleichermaßen über die gespeicherte Benutzerzuordnung.
 
+Das Hinzufügen eines neuen Passkeys ist als Step-up-Vorgang geschützt: Vor dem Start der WebAuthn-Registrierung muss das aktuelle Portal-Passwort erneut bestätigt werden. Ist TOTP aktiviert, muss zusätzlich ein gültiger TOTP- oder Recovery-Code angegeben werden.
+
 Gespeichert werden nur Credential-ID, öffentlicher Schlüssel, Signaturzähler, Bezeichnung und Zeitstempel. Private Schlüssel verbleiben auf dem Gerät bzw. im Passkey-Provider.
 
 WebAuthn-Challenges werden nur für die laufende Registration/Authentication in der signierten Portal-Session gehalten. Registrierung und Anmeldung prüfen RP-ID, Origin und User Verification.
@@ -52,7 +54,7 @@ Die Drosselung gilt für:
 
 ## TOTP-QR-Code
 
-Während `/security/mfa/start` ist der QR-Code unter `/security/mfa/qr` nur für die angemeldete Sitzung abrufbar. Er wird dynamisch aus dem verschlüsselt gespeicherten TOTP-Seed erzeugt und mit `Cache-Control: no-store` ausgeliefert.
+Während `/security/mfa/start` ist der QR-Code unter `/security/mfa/qr` nur für die angemeldete Sitzung und nur während der noch nicht bestätigten 2FA-Einrichtung abrufbar. Nach erfolgreicher Aktivierung ist der QR-Endpunkt für diesen Seed nicht mehr verfügbar. Er wird dynamisch aus dem verschlüsselt gespeicherten TOTP-Seed erzeugt und mit `Cache-Control: no-store` ausgeliefert.
 
 ## Admin-2FA-Notfallreset
 
@@ -91,7 +93,7 @@ sudo -u familienportal .venv/bin/pip install -U .
 
 ## Tests
 
-`tests/test_security_071.py` prüft die Ableitung von RP-ID/Origin und die anonymisierte Rate-Limit-Schlüsselbildung. Die bestehende CI installiert die aktuellen Dependencies und führt die gesamte Pytest-Suite unter Python 3.12 aus.
+`tests/test_security_071.py` prüft die Ableitung von RP-ID/Origin, den Import des WebAuthn-Service und die anonymisierte Rate-Limit-Schlüsselbildung. Die bestehende CI installiert die aktuellen Dependencies und führt die gesamte Pytest-Suite unter Python 3.12 aus.
 
 ## Noch offen für 0.7.2 / Hardening
 
