@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 {% block title %}Nextcloud{% endblock %}
 {% block content %}
-<h1 class="h2">Nextcloud</h1>
-<p class="text-secondary">Connector-Verwaltung</p>
+<div class="d-flex justify-content-between align-items-start mb-4"><div><h1 class="h2">Nextcloud</h1><p class="text-secondary">Connector-Verwaltung</p></div><a class="btn btn-primary" href="/platform/nextcloud/management"><i class="bi bi-diagram-3 me-1"></i>Zuordnungen & Ordner</a></div>
 {% if live_error %}<div class="alert alert-warning">{{ live_error }}</div>{% endif %}
-<p>Status: {{ state.health_status if state else 'not_checked' }}</p>
+<p>Status: <strong>{{ state.health_status if state else 'not_checked' }}</strong></p>
+<p>Secret verfügbar: <strong>{% if secret_available %}Ja{% else %}Nein{% endif %}</strong></p>
 <p>Benutzer: {{ users|length }} · Gruppen: {{ groups|length }} · Dateien: {{ files|length }} · Freigaben: {{ shares|length }}</p>
 {% for name, url in endpoints.items() %}<p><strong>{{ name }}</strong>: <code>{{ url }}</code></p>{% endfor %}
-<a class="btn btn-outline-secondary" href="/platform">Zur Plattform</a>
+<div class="d-flex gap-2"><a class="btn btn-outline-secondary" href="/platform">Zur Plattform</a><a class="btn btn-outline-primary" href="/platform/nextcloud/management">0.4.1 Verwaltung</a></div>
 {% endblock %}
