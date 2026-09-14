@@ -1,3 +1,4 @@
+from familienportal.extensions import BUILTIN_MODULES
 from familienportal.gramps_api import router as gramps_api_router
 from familienportal.gramps_extra_web import router as gramps_extra_router
 from familienportal.gramps_transfer_web import router as gramps_transfer_router
@@ -5,6 +6,8 @@ from familienportal.gramps_web import router as gramps_router
 from familienportal.main import app
 from familienportal.role_mfa_policy import RoleMfaPolicyMiddleware
 from familienportal.security_http import CsrfOriginMiddleware, SecurityHeadersMiddleware
+
+BUILTIN_MODULES["genealogy"]["route"] = "/genealogy"
 
 app.include_router(gramps_router)
 app.include_router(gramps_extra_router)
