@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block title %}Familien · Ahnenforschung{% endblock %}
+{% block content %}
+<h1 class="h2 mb-3">Familien suchen</h1>
+<p><a href="/genealogy">Personensuche</a> · <a href="/genealogy/dates">Geburtstage und Gedenktage</a></p>
+<form method="get" class="mb-4"><div class="input-group"><input class="form-control" name="q" value="{{ query }}" placeholder="Familie suchen"><button class="btn btn-primary">Suchen</button></div></form>
+<div class="list-group">{% for item in results %}<div class="list-group-item"><strong>{{ item.name or item.gramps_id or item.handle or 'Familie' }}</strong>{% if item.gramps_id %}<div class="small text-secondary">{{ item.gramps_id }}</div>{% endif %}</div>{% endfor %}</div>
+{% endblock %}
