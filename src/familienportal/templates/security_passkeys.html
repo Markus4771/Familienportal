@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Passkeys · Familienportal{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-start mb-4"><div><p class="text-uppercase small fw-semibold text-primary mb-1">Sicherheit 0.7.1</p><h1 class="h2 mb-1">Passkeys</h1><p class="text-secondary mb-0">Passkeys mit Windows Hello, Smartphone oder Sicherheitsschlüssel verwenden.</p></div><a class="btn btn-outline-secondary" href="/security">Zurück</a></div>
+<div id="passkey-message"></div>
+<div class="row g-4"><div class="col-lg-5"><div class="card border-0 shadow-sm"><div class="card-body"><h2 class="h5">Neuen Passkey registrieren</h2><label class="form-label">Bezeichnung</label><input id="passkey-label" class="form-control mb-3" value="Mein Passkey" maxlength="160"><button id="register-passkey" class="btn btn-primary">Passkey hinzufügen</button></div></div></div>
+<div class="col-lg-7"><div class="card border-0 shadow-sm"><div class="card-body"><h2 class="h5">Registrierte Passkeys</h2>{% if passkeys %}<div class="list-group list-group-flush">{% for item in passkeys %}<div class="list-group-item px-0 d-flex justify-content-between align-items-center gap-3"><div><strong>{{ item.label or 'Passkey' }}</strong><div class="small text-secondary">Erstellt: {{ item.created_at }}{% if item.last_used_at %} · zuletzt: {{ item.last_used_at }}{% endif %}</div></div><form method="post" action="/security/passkeys/{{ item.id }}/delete"><button class="btn btn-sm btn-outline-danger">Löschen</button></form></div>{% endfor %}</div>{% else %}<p class="text-secondary mb-0">Noch kein Passkey registriert.</p>{% endif %}</div></div></div></div>
+<script src="/static/webauthn.js"></script>
+<script>
+const message = document.getElementById('passkey-message');
+document.getElementById('register-passkey').addEventListener('click', async () => {
+  try {
+    if (!window.PublicKeyCredential) throw new Error('WebAuthn wird von diesem Browser nicht unterstützt.');
+    const start = await fetch('/api/v1/security/passkeys/register/options', {method:'POST', credentials:'same-origin'});
+    if (!start.ok) throw new Error(await start.text());
+    const options = registrationOptions(await start.json());
+    const credential = await navigator.credentials.create({publicKey: options});
+    const verify = await fetch('/api/v1/security/passkeys/register/verify', {method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json'}, body:JSON.stringify({label:document.getElementById('passkey-label').value, credential:credentialToJSON(credential)})});
+    if (!verify.ok) throw new Error(await verify.text());
+    location.reload();
+  } catch (error) {
+    message.innerHTML = `<div class="alert alert-danger">${error.message}</div>`;
+  }
+});
+</script>
+{% endblock %}
