@@ -1,5 +1,6 @@
 from functools import lru_cache
 from typing import Annotated
+from urllib.parse import urlparse
 
 from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
@@ -33,6 +34,12 @@ class Settings(BaseSettings):
     password_reset_ttl_minutes: int = 30
     mfa_issuer: str = "Familienportal"
     require_admin_mfa: bool = False
+    login_max_failures: int = 5
+    login_window_minutes: int = 15
+    login_lock_minutes: int = 15
+    webauthn_rp_id: str | None = None
+    webauthn_rp_name: str = "Familienportal"
+    webauthn_origin: str | None = None
 
     worker_interval_seconds: int = 60
     calendar_sync_interval_minutes: int = 5
@@ -63,7 +70,20 @@ class Settings(BaseSettings):
                 raise ValueError("FAMILIENPORTAL_SESSION_SECRET_KEY muss in Produktion gesetzt sein")
             if self.security_encryption_key == "development-only-change-security-key":
                 raise ValueError("FAMILIENPORTAL_SECURITY_ENCRYPTION_KEY muss in Produktion gesetzt sein")
+            if not self.secure_cookies:
+                raise ValueError("FAMILIENPORTAL_SECURE_COOKIES muss in Produktion true sein")
         return self
+
+    @property
+    def effective_webauthn_origin(self) -> str:
+        return (self.webauthn_origin or self.public_url).rstrip("/")
+
+    @property
+    def effective_webauthn_rp_id(self) -> str:
+        if self.webauthn_rp_id:
+            return self.webauthn_rp_id
+        hostname = urlparse(self.public_url).hostname
+        return hostname or "localhost"
 
     @property
     def forwarded_allow_ips(self) -> str:
