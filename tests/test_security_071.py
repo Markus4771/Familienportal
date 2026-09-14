@@ -1,5 +1,6 @@
 from familienportal.config import Settings
 from familienportal.throttle import make_key
+from familienportal.webauthn_service import authentication_options, registration_options
 
 
 def test_webauthn_defaults_follow_public_url():
@@ -24,3 +25,8 @@ def test_throttle_key_is_stable_and_hides_input():
     assert first == second
     assert "user@example.de" not in first
     assert len(first) == 64
+
+
+def test_webauthn_service_is_importable():
+    assert callable(registration_options)
+    assert callable(authentication_options)
