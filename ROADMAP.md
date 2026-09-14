@@ -116,21 +116,46 @@
 - Migration 0007
 - Tests für Ansichtsperioden
 
-### Nächste Kalender-Ausbaustufe
+## 0.5.3 – automatische Synchronisation und Erinnerungen – umgesetzt
 
-- automatische zeitgesteuerte Synchronisation
-- serverseitige Erinnerungszustellung
-- optional Drag-and-drop im Browser
-- Einladungen und Teilnehmer
+- automatische CalDAV-Synchronisation über systemd-Timer
+- Reminder-Queue als persistenter Jobstatus
+- SMTP-Versand für fällige Erinnerungen
+- Retry-Zähler und letzter Zustellversuch
+- getrennte One-Shot-Dienste für Synchronisation und Reminder
+- Debian-Installer aktiviert die Timer
+- Migrationen 0008/0009
 
-## Phase 0.6 – Mailcow
+## 0.6.0 – Mailcow-Basis – umgesetzt
 
-- Verbindungstest
-- Postfachverwaltung
-- Aliasse und Verteiler
-- Quotas
-- Passwort-Zurücksetzung per E-Mail vorbereiten
-- Webmail-Verknüpfung
+- API-Key-basierter Connector
+- Domains lesen
+- Postfächer lesen
+- Aliase lesen
+- Quota-Summen
+- Healthcheck
+- Statusseite unter `/platform/mailcow`
+
+## 0.6.1 – Mailcow-Verwaltung – umgesetzt
+
+- Portal-Benutzer einem Mailcow-Postfach zuordnen
+- Postfächer über die Mailcow-API anlegen
+- Anzeigename, Quota und Aktivstatus ändern
+- Alias/Verteiler anlegen
+- Alias-Ziel und Aktivstatus ändern
+- Verwaltungsoberfläche unter `/platform/mailcow/management`
+- SOGo/Webmail-Link
+- Startpasswörter werden nicht im Familienportal gespeichert
+- Migration 0009 für Mailcow-Zuordnungen und Reminder-Retry-State
+- Tests für Mailbox-API-Payloads
+
+### Nächste Mailcow-Ausbaustufe
+
+- Passwort-Reset-Workflow aus dem Familienportal
+- Postfach löschen mit Schutzmechanismen
+- Alias löschen in der GUI
+- komfortable Verteilerverwaltung mit mehreren Empfängern
+- optional SSO zu SOGo
 
 ## Phase 0.7 – Sicherheit
 
