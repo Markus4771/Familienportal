@@ -1,6 +1,6 @@
 [Unit]
-Description=Familienportal calendar reminder queue
-After=familienportal.service
+Description=Familienportal calendar reminders
+After=network-online.target familienportal.service
 
 [Service]
 Type=oneshot
@@ -9,6 +9,7 @@ Group=familienportal
 WorkingDirectory=/opt/familienportal
 EnvironmentFile=/etc/familienportal/familienportal.env
 ExecStart=/opt/familienportal/.venv/bin/python -c "from familienportal.reminder_queue_worker import run_once; run_once()"
+ExecStart=/opt/familienportal/.venv/bin/python -c "from familienportal.smtp_mailer import deliver_queued_reminders; deliver_queued_reminders()"
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
