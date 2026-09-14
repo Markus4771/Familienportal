@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily Familienportal Security Cleanup
+
+[Timer]
+OnCalendar=daily
+Persistent=true
+RandomizedDelaySec=15m
+Unit=familienportal-security-cleanup.service
+
+[Install]
+WantedBy=timers.target
