@@ -162,21 +162,30 @@
 - Capabilities für Passwort-Reset, Alias-Löschen, Verteiler und Unmapping
 - keine zusätzliche Datenbankmigration erforderlich
 
-### Nächste Mailcow-/Sicherheits-Ausbaustufe
+## 0.7.0 – Sicherheitskern – umgesetzt
 
-- Postfach endgültig löschen mit Schutz- und Bestätigungsmechanismus
-- Self-Service-Passwortänderung für Portal-Benutzer
-- optional SSO zu SOGo
-- Passwort-Reset per E-Mail im Sicherheitsblock 0.7
+- TOTP-Zwei-Faktor-Authentifizierung
+- verschlüsselte Speicherung der TOTP-Seeds
+- einmalige Recovery-Codes mit Hash-Speicherung
+- Login mit TOTP oder Recovery-Code
+- Web- und REST-Login erzwingen 2FA bei aktiviertem Konto
+- optionale Administrator-2FA-Richtlinie
+- Passwort-Zurücksetzung per E-Mail
+- neutrale Antwort beim Passwort-Reset-Antrag
+- gehashte, zeitlich begrenzte Reset-Verifier
+- serverseitige, widerrufbare Sitzungen
+- Sitzungsübersicht und Abmelden einzelner/aller anderen Sitzungen
+- Session-Widerruf bei Passwort-Reset und Kontosperre
+- Passkey/WebAuthn-Datenmodell vorbereitet
+- Migration 0010
 
-## Phase 0.7 – Sicherheit
+### Nächste Sicherheits-Ausbaustufe 0.7.1
 
-- TOTP-2FA
-- Recovery-Codes
-- 2FA-Richtlinien
-- Passwort-Zurücksetzung
-- Session-Verwaltung
-- WebAuthn/Passkeys als Erweiterung
+- echte WebAuthn-/Passkey-Registrierung und Anmeldung
+- QR-Code-Ausgabe bei TOTP-Einrichtung
+- Login-Rate-Limits und zeitweise Sperren
+- Administrator-Notfall-Reset für 2FA
+- feinere 2FA-Richtlinien pro Rolle
 
 ## Phase 0.8 – Gramps Web / Ahnenforschung
 
