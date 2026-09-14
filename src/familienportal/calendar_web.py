@@ -40,11 +40,7 @@ def _can_write(user: User) -> bool:
 
 def _bootstrap_calendars(db: Session, user: User) -> None:
     by_slug = {item.slug: item for item in db.scalars(select(Calendar).where(Calendar.family_id == user.family_id)).all()}
-    defaults = [
-        ("familie", "Familienkalender", "family"),
-        ("geburtstage", "Geburtstage", "birthday"),
-        ("veranstaltungen", "Veranstaltungen", "event"),
-    ]
+    defaults = [("familie", "Familienkalender", "family"), ("geburtstage", "Geburtstage", "birthday"), ("veranstaltungen", "Veranstaltungen", "event")]
     changed = False
     for slug, name, kind in defaults:
         if slug not in by_slug:
@@ -65,19 +61,11 @@ def calendar_page(request: Request, db: Session = Depends(get_db)):
         raise HTTPException(status_code=403, detail="Keine Kalenderberechtigung")
     _bootstrap_calendars(db, user)
     calendars = db.scalars(select(Calendar).where(Calendar.family_id == user.family_id, Calendar.is_visible.is_(True)).order_by(Calendar.name)).all()
-    events = db.scalars(select(CalendarEvent).where(CalendarEvent.family_id == user.family_id).order_by(CalendarEvent.starts_at).limit(250)).all()
+    events = db.scalars(select(CalendarEvent).where(CalendarEvent.family_id == user.family_id, CalendarEvent.deleted_at.is_(None)).order_by(CalendarEvent.starts_at).limit(250)).all()
     birthdays = db.scalars(select(Birthday).where(Birthday.family_id == user.family_id).order_by(Birthday.birth_date)).all()
     navigation_modules = [item for item in enabled_modules(db, user.family_id, user) if item.get("menu")]
     is_admin = user.is_superadmin or any(role.name == "Administrator" for role in user.roles)
-    return templates.TemplateResponse(request=request, name="calendar.html", context={
-        "user": user,
-        "is_admin": is_admin,
-        "navigation_modules": navigation_modules,
-        "calendars": calendars,
-        "events": events,
-        "birthdays": birthdays,
-        "can_write": _can_write(user),
-    })
+    return templates.TemplateResponse(request=request, name="calendar.html", context={"user": user, "is_admin": is_admin, "navigation_modules": navigation_modules, "calendars": calendars, "events": events, "birthdays": birthdays, "can_write": _can_write(user)})
 
 
 @router.post("/calendar/calendars")
@@ -95,20 +83,7 @@ def create_calendar(request: Request, name: str = Form(...), slug: str = Form(..
 
 
 @router.post("/calendar/events")
-def create_event(
-    request: Request,
-    calendar_id: UUID = Form(...),
-    title: str = Form(...),
-    starts_at: str = Form(...),
-    ends_at: str = Form(...),
-    description: str = Form(""),
-    location: str = Form(""),
-    category: str = Form("general"),
-    recurrence_rule: str = Form(""),
-    reminder_minutes: str = Form(""),
-    all_day: bool = Form(False),
-    db: Session = Depends(get_db),
-):
+def create_event(request: Request, calendar_id: UUID = Form(...), title: str = Form(...), starts_at: str = Form(...), ends_at: str = Form(...), description: str = Form(""), location: str = Form(""), category: str = Form("general"), recurrence_rule: str = Form(""), reminder_minutes: str = Form(""), all_day: bool = Form(False), db: Session = Depends(get_db)):
     user = _user(request, db)
     if not _can_write(user):
         raise HTTPException(status_code=403, detail="Keine Schreibberechtigung")
@@ -127,23 +102,25 @@ def create_event(
     if end < start:
         raise HTTPException(status_code=400, detail="Ende liegt vor dem Beginn")
     reminder = int(reminder_minutes) if reminder_minutes.strip().isdigit() else None
-    item = CalendarEvent(
-        family_id=user.family_id,
-        calendar_id=calendar.id,
-        created_by_user_id=user.id,
-        title=title.strip(),
-        description=description.strip() or None,
-        location=location.strip() or None,
-        starts_at=start,
-        ends_at=end,
-        all_day=all_day,
-        category=category.strip() or "general",
-        recurrence_rule=recurrence_rule.strip() or None,
-        reminder_minutes=reminder,
-    )
+    item = CalendarEvent(family_id=user.family_id, calendar_id=calendar.id, created_by_user_id=user.id, title=title.strip(), description=description.strip() or None, location=location.strip() or None, starts_at=start, ends_at=end, all_day=all_day, category=category.strip() or "general", recurrence_rule=recurrence_rule.strip() or None, reminder_minutes=reminder)
     db.add(item)
     db.flush()
     audit(db, "calendar.event.created", actor=user, target_type="calendar_event", target_id=str(item.id))
+    db.commit()
+    return RedirectResponse("/calendar", status_code=303)
+
+
+@router.post("/calendar/events/{event_id}/delete")
+def delete_event(event_id: UUID, request: Request, db: Session = Depends(get_db)):
+    user = _user(request, db)
+    if not _can_write(user):
+        raise HTTPException(status_code=403, detail="Keine Schreibberechtigung")
+    event = db.get(CalendarEvent, event_id)
+    if not event or event.family_id != user.family_id:
+        raise HTTPException(status_code=404, detail="Termin nicht gefunden")
+    event.deleted_at = datetime.now(timezone.utc)
+    event.updated_at = event.deleted_at
+    audit(db, "calendar.event.deleted", actor=user, target_type="calendar_event", target_id=str(event.id))
     db.commit()
     return RedirectResponse("/calendar", status_code=303)
 
@@ -171,5 +148,5 @@ def export_calendar(calendar_id: UUID, request: Request, db: Session = Depends(g
     calendar = db.get(Calendar, calendar_id)
     if not calendar or calendar.family_id != user.family_id:
         raise HTTPException(status_code=404, detail="Kalender nicht gefunden")
-    events = db.scalars(select(CalendarEvent).where(CalendarEvent.calendar_id == calendar.id).order_by(CalendarEvent.starts_at)).all()
+    events = db.scalars(select(CalendarEvent).where(CalendarEvent.calendar_id == calendar.id, CalendarEvent.deleted_at.is_(None)).order_by(CalendarEvent.starts_at)).all()
     return PlainTextResponse(calendar_to_ics(calendar.name, list(events)), media_type="text/calendar; charset=utf-8", headers={"Content-Disposition": f'attachment; filename="{calendar.slug}.ics"'})
