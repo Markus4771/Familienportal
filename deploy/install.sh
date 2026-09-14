@@ -62,6 +62,8 @@ for unit in \
   familienportal.service \
   familienportal-calendar-sync.service \
   familienportal-calendar-sync.timer \
+  familienportal-gramps-calendar-sync.service \
+  familienportal-gramps-calendar-sync.timer \
   familienportal-reminder-queue.service \
   familienportal-reminder-queue.timer \
   familienportal-security-cleanup.service \
@@ -75,6 +77,7 @@ install -o root -g root -m 0755 "$APP_DIR/deploy/familienportal-release" /usr/lo
 systemctl daemon-reload
 systemctl enable familienportal.service
 systemctl enable --now familienportal-calendar-sync.timer
+systemctl enable --now familienportal-gramps-calendar-sync.timer
 systemctl enable --now familienportal-reminder-queue.timer
 systemctl enable --now familienportal-security-cleanup.timer
 
