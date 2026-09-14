@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Plattform · Familienportal{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-start mb-4">
+  <div><p class="text-uppercase small fw-semibold text-primary mb-1">Plattform 0.3</p><h1 class="h2">Module & Connectoren</h1><p class="text-secondary">Zentrale Verwaltung der Erweiterungen dieser Familie.</p></div>
+  <a href="/settings" class="btn btn-outline-secondary"><i class="bi bi-sliders me-2"></i>Einstellungen</a>
+</div>
+
+<section id="modules" class="mb-5">
+  <div class="d-flex justify-content-between align-items-center mb-3"><h2 class="h4 mb-0">Module</h2><span class="badge text-bg-light border">{{ modules|length }} verfügbar</span></div>
+  <div class="row g-3">
+    {% for module in modules %}
+    <div class="col-md-6 col-xl-4">
+      <div class="card h-100 border-0 shadow-sm">
+        <div class="card-body d-flex flex-column">
+          <div class="d-flex justify-content-between align-items-start">
+            <span class="module-icon"><i class="bi {{ module.icon }}"></i></span>
+            <span class="badge {% if module.enabled %}text-bg-success{% else %}text-bg-secondary{% endif %}">{% if module.enabled %}Aktiv{% else %}Inaktiv{% endif %}</span>
+          </div>
+          <h3 class="h5 mt-3">{{ module.name }}</h3><p class="text-secondary flex-grow-1">{{ module.description }}</p>
+          <form method="post" action="/platform/modules/{{ module.key }}/toggle"><button class="btn {% if module.enabled %}btn-outline-danger{% else %}btn-primary{% endif %} w-100">{% if module.enabled %}Deaktivieren{% else %}Aktivieren{% endif %}</button></form>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section id="connectors">
+  <div class="d-flex justify-content-between align-items-center mb-3"><h2 class="h4 mb-0">Connectoren</h2><span class="badge text-bg-light border">Externe Dienste</span></div>
+  <div class="row g-3">
+    {% for connector in connectors %}
+    <div class="col-lg-6">
+      <div class="card border-0 shadow-sm h-100"><div class="card-body">
+        <div class="d-flex align-items-center gap-3 mb-3"><span class="service-icon"><i class="bi {{ connector.icon }}"></i></span><div><h3 class="h5 mb-0">{{ connector.name }}</h3><span class="text-secondary small">{{ connector.description }}</span></div></div>
+        <form method="post" action="/platform/connectors/{{ connector.key }}">
+          <div class="form-check form-switch mb-3"><input class="form-check-input" type="checkbox" name="enabled" value="true" id="enable-{{ connector.key }}" {% if connector.enabled %}checked{% endif %}><label class="form-check-label" for="enable-{{ connector.key }}">Connector aktivieren</label></div>
+          <label class="form-label">Basis-URL</label><input class="form-control mb-3" name="base_url" value="{{ connector.base_url or '' }}" placeholder="https://dienst.example.de">
+          <div class="d-flex justify-content-between align-items-center"><span class="small text-secondary">Status: {{ connector.health_status }}</span><button class="btn btn-outline-primary">Speichern</button></div>
+        </form>
+      </div></div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}
