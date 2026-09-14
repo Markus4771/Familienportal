@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Nextcloud{% endblock %}
+{% block content %}
+<h1 class="h2">Nextcloud</h1>
+<p class="text-secondary">Connector-Verwaltung</p>
+{% if live_error %}<div class="alert alert-warning">{{ live_error }}</div>{% endif %}
+<p>Status: {{ state.health_status if state else 'not_checked' }}</p>
+<p>Benutzer: {{ users|length }} · Gruppen: {{ groups|length }} · Dateien: {{ files|length }} · Freigaben: {{ shares|length }}</p>
+{% for name, url in endpoints.items() %}<p><strong>{{ name }}</strong>: <code>{{ url }}</code></p>{% endfor %}
+<a class="btn btn-outline-secondary" href="/platform">Zur Plattform</a>
+{% endblock %}
