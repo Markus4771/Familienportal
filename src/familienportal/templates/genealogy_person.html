@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Person · Ahnenforschung{% endblock %}
+{% block content %}
+{% set profile = person.profile if person.profile is mapping else person %}
+{% set display_name = profile.name or person.name or person.display_name or person.gramps_id or 'Person' %}
+<h1 class="h2 mb-3">{{ display_name }}</h1>
+<div class="row g-4">
+  <div class="col-lg-5">
+    <div class="card"><div class="card-body">
+      <h2 class="h5">Person</h2>
+      {% if person.gramps_id %}<p><strong>Gramps-ID:</strong> {{ person.gramps_id }}</p>{% endif %}
+      {% if profile.birth or person.birth %}<p><strong>Geburt:</strong> {{ profile.birth or person.birth }}</p>{% endif %}
+      {% if profile.death or person.death %}<p><strong>Tod:</strong> {{ profile.death or person.death }}</p>{% endif %}
+      {% if gramps_base_url and person.handle %}<p><a class="btn btn-outline-secondary" href="{{ gramps_base_url }}/person/{{ person.handle }}" target="_blank" rel="noopener">In Gramps Web öffnen</a></p>{% endif %}
+    </div></div>
+  </div>
+  <div class="col-lg-7">
+    <div class="card"><div class="card-body">
+      <h2 class="h5">Familienbeziehungen</h2>
+      <h3 class="h6 mt-3">Eltern</h3>
+      <div class="d-flex flex-wrap gap-2">{% for item in relations.parents %}<a class="btn btn-sm btn-outline-primary" href="/genealogy/person/{{ item.handle }}">{{ item.name }}</a>{% else %}<span class="text-secondary">Keine Zuordnung</span>{% endfor %}</div>
+      <h3 class="h6 mt-3">Partner</h3>
+      <div class="d-flex flex-wrap gap-2">{% for item in relations.partners %}<a class="btn btn-sm btn-outline-primary" href="/genealogy/person/{{ item.handle }}">{{ item.name }}</a>{% else %}<span class="text-secondary">Keine Zuordnung</span>{% endfor %}</div>
+      <h3 class="h6 mt-3">Kinder</h3>
+      <div class="d-flex flex-wrap gap-2">{% for item in relations.children %}<a class="btn btn-sm btn-outline-primary" href="/genealogy/person/{{ item.handle }}">{{ item.name }}</a>{% else %}<span class="text-secondary">Keine Zuordnung</span>{% endfor %}</div>
+    </div></div>
+  </div>
+</div>
+<div class="card mt-4"><div class="card-body">
+  <h2 class="h5">Beziehungsübersicht</h2>
+  <div class="text-center">
+    <div class="mb-3">{% for item in relations.parents %}<a class="badge text-bg-light text-decoration-none m-1" href="/genealogy/person/{{ item.handle }}">{{ item.name }}</a>{% endfor %}</div>
+    <div class="border rounded p-3 d-inline-block mb-3"><strong>{{ display_name }}</strong></div>
+    <div class="mb-3">{% for item in relations.partners %}<a class="badge text-bg-secondary text-decoration-none m-1" href="/genealogy/person/{{ item.handle }}">{{ item.name }}</a>{% endfor %}</div>
+    <div>{% for item in relations.children %}<a class="badge text-bg-light text-decoration-none m-1" href="/genealogy/person/{{ item.handle }}">{{ item.name }}</a>{% endfor %}</div>
+  </div>
+</div>
+<p class="mt-4"><a href="/genealogy">Zurück zur Personensuche</a></p>
+{% endblock %}
