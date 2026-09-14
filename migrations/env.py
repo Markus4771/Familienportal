@@ -6,6 +6,7 @@ from sqlalchemy import engine_from_config, pool
 from familienportal.config import get_settings
 from familienportal.database import Base
 from familienportal import models  # noqa: F401
+from familienportal import platform_models  # noqa: F401
 
 config = context.config
 config.set_main_option("sqlalchemy.url", get_settings().database_url)
