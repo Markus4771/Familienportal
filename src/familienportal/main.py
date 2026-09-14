@@ -28,6 +28,7 @@ from familienportal.nextcloud_management_web import router as nextcloud_manageme
 from familienportal.nextcloud_web import router as nextcloud_router
 from familienportal.platform_web import router as platform_router
 from familienportal.security_web import router as security_router
+from familienportal.session_guard import SessionGuardMiddleware
 from familienportal.web import router as web_router
 
 settings = get_settings()
@@ -35,6 +36,7 @@ package_dir = Path(__file__).resolve().parent
 
 app = FastAPI(title=settings.app_name, version=__version__, debug=settings.debug)
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.trusted_hosts)
+app.add_middleware(SessionGuardMiddleware)
 app.add_middleware(SessionMiddleware, secret_key=settings.session_secret_key, https_only=settings.secure_cookies, same_site="lax", max_age=settings.session_max_age_seconds)
 app.mount("/static", StaticFiles(directory=package_dir / "static"), name="static")
 app.include_router(web_router)
