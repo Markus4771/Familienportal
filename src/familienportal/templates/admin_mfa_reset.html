@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}2FA-Notfallreset · Familienportal{% endblock %}
+{% block content %}
+<div class="row justify-content-center"><div class="col-xl-7">
+<div class="card border-0 shadow-sm"><div class="card-body p-4">
+<p class="text-uppercase small fw-semibold text-danger mb-1">Sicherheit 0.7.1</p><h1 class="h4">2FA-Notfallreset</h1>
+<p class="text-secondary">Setzt TOTP und Recovery-Codes des ausgewählten Benutzers zurück und widerruft dessen aktive Sitzungen.</p>
+{% if request.query_params.get('error') %}<div class="alert alert-danger">{{ request.query_params.get('error') }}</div>{% endif %}
+{% if request.query_params.get('success') %}<div class="alert alert-success">2FA wurde zurückgesetzt.</div>{% endif %}
+<form method="post" action="/admin/security/mfa-reset">
+<label class="form-label">Benutzer</label><select class="form-select mb-3" name="target_user_id" required>{% for item in users %}<option value="{{ item.id }}">{{ item.display_name }} · {{ item.email }}</option>{% endfor %}</select>
+<label class="form-label">Eigenes Administrator-Passwort</label><input class="form-control mb-3" type="password" name="admin_password" autocomplete="current-password" required>
+<label class="form-label">Eigener 2FA-/Recovery-Code</label><input class="form-control mb-3" name="admin_code" autocomplete="one-time-code"><div class="form-text mb-3">Erforderlich, wenn für dein Administratorkonto 2FA aktiviert ist.</div>
+<button class="btn btn-danger">2FA zurücksetzen und Sitzungen widerrufen</button> <a class="btn btn-outline-secondary" href="/security">Abbrechen</a>
+</form></div></div></div></div>
+{% endblock %}
