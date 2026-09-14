@@ -24,6 +24,10 @@ def _fernet(settings: Settings) -> Fernet:
     return Fernet(base64.urlsafe_b64encode(digest))
 
 
+def _utc(value: datetime) -> datetime:
+    return value if value.tzinfo is not None else value.replace(tzinfo=timezone.utc)
+
+
 def encrypt_seed(seed: str, settings: Settings) -> str:
     return _fernet(settings).encrypt(seed.encode("utf-8")).decode("ascii")
 
@@ -66,7 +70,7 @@ def hash_verifier(value: str) -> str:
 
 
 def generate_recovery_codes(count: int = 10) -> list[str]:
-    return [f"{secrets.token_hex(4)[:4]}-{secrets.token_hex(4)[:4]}" for _ in range(count)]
+    return [f"{secrets.token_hex(3)}-{secrets.token_hex(3)}" for _ in range(count)]
 
 
 def store_recovery_codes(state: UserMfaState, codes: list[str]) -> None:
@@ -109,7 +113,7 @@ def create_session(db: Session, user: User, settings: Settings, user_agent: str 
 def valid_session(db: Session, session_id, user_id) -> LoginSession | None:
     item = db.get(LoginSession, session_id)
     now = datetime.now(timezone.utc)
-    if not item or item.user_id != user_id or item.revoked_at is not None or item.expires_at <= now:
+    if not item or item.user_id != user_id or item.revoked_at is not None or _utc(item.expires_at) <= now:
         return None
     item.last_seen_at = now
     return item
@@ -142,7 +146,7 @@ def create_recovery_request(db: Session, user: User, settings: Settings) -> str:
 def consume_recovery_request(db: Session, token: str) -> AccountRecoveryRequest | None:
     now = datetime.now(timezone.utc)
     item = db.scalar(select(AccountRecoveryRequest).where(AccountRecoveryRequest.verifier_hash == hash_verifier(token)))
-    if not item or item.used_at is not None or item.expires_at <= now:
+    if not item or item.used_at is not None or _utc(item.expires_at) <= now:
         return None
     item.used_at = now
     return item
