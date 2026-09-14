@@ -4,10 +4,31 @@
 <div class="row justify-content-center py-5"><div class="col-sm-10 col-md-6 col-lg-4">
   <div class="text-center mb-4"><div class="hero-icon"><i class="bi bi-people-fill"></i></div><h1 class="h3 mt-3">Willkommen</h1><p class="text-secondary">Melde dich in deinem Familienportal an.</p></div>
   <form method="post" class="card border-0 shadow-sm"><div class="card-body p-4">
-    <div class="mb-3"><label class="form-label">E-Mail-Adresse</label><input class="form-control form-control-lg" type="email" name="email" autocomplete="username" required autofocus></div>
+    <div class="mb-3"><label class="form-label">E-Mail-Adresse</label><input id="login-email" class="form-control form-control-lg" type="email" name="email" autocomplete="username" required autofocus></div>
     <div class="mb-3"><label class="form-label">Passwort</label><input class="form-control form-control-lg" type="password" name="password" autocomplete="current-password" required></div>
     <div class="d-flex justify-content-end mb-4"><a class="small" href="/forgot-password">Passwort vergessen?</a></div>
-    <button class="btn btn-primary btn-lg w-100">Anmelden</button>
+    <button class="btn btn-primary btn-lg w-100 mb-3">Anmelden</button>
+    <button id="passkey-login" type="button" class="btn btn-outline-primary w-100"><i class="bi bi-key me-2"></i>Mit Passkey anmelden</button>
+    <div id="passkey-error" class="small text-danger mt-3"></div>
   </div></form>
 </div></div>
+<script src="/static/webauthn.js"></script>
+<script>
+document.getElementById('passkey-login').addEventListener('click', async () => {
+  const errorBox = document.getElementById('passkey-error');
+  errorBox.textContent = '';
+  try {
+    if (!window.PublicKeyCredential) throw new Error('Passkeys werden von diesem Browser nicht unterstützt.');
+    const email = document.getElementById('login-email').value.trim();
+    if (!email) throw new Error('Bitte zuerst die E-Mail-Adresse eingeben.');
+    const start = await fetch('/api/v1/auth/passkey/options', {method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email})});
+    if (!start.ok) throw new Error('Passkey-Anmeldung ist für dieses Konto nicht verfügbar.');
+    const credential = await navigator.credentials.get({publicKey: authenticationOptions(await start.json())});
+    const verify = await fetch('/api/v1/auth/passkey/verify', {method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json'}, body:JSON.stringify(credentialToJSON(credential))});
+    const result = await verify.json();
+    if (!verify.ok) throw new Error(result.detail || 'Passkey-Anmeldung fehlgeschlagen.');
+    location.href = result.redirect || '/dashboard';
+  } catch (error) { errorBox.textContent = error.message; }
+});
+</script>
 {% endblock %}
