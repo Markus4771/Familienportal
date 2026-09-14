@@ -66,7 +66,7 @@
 - DAV-Diagnose
 - eigene Verwaltungsoberfläche
 - Audit für Zuordnungen und Ordneranlage
-- Migration 0004 für Nextcloud-Zuordnungen
+- Migration 0004 für Nextcloud-Zuordnungen und Ordneranlage
 
 ## 0.5.0 – Kalenderplattform – umgesetzt
 
@@ -269,13 +269,26 @@
 - Tests für Datumsnormalisierung, stabile UIDs und Geburtstags-/Gedenktagsgenerierung
 - keine zusätzliche Datenbankmigration erforderlich
 
-### Nächste Gramps-Ausbaustufe 0.8.2
+## 0.8.2 – Personendetails und Beziehungen – umgesetzt
 
-- komfortablere Personendetailseiten und Beziehungsdarstellung
-- Eltern, Kinder, Partner und Familienbeziehungen
+- eigene Personendetailseite im Familienportal
+- direkte Navigation aus der Personensuche
+- Anzeige von Gramps-ID sowie Geburts- und Sterbeinformationen
+- Eltern, Partner und Kinder aus Gramps-Familienbeziehungen auflösen
+- klickbare Navigation zwischen verwandten Personen
+- kompakte Stammbaum-/Beziehungsübersicht im Portal
+- direkter Link zur Person in Gramps Web
+- bestehende `genealogy.read`-Berechtigung wird weiterverwendet
+- Tests für verschiedene Familienreferenz-Formate und Beziehungsauflösung
+- keine zusätzliche Datenbankmigration erforderlich
+
+### Nächste Gramps-Ausbaustufe 0.8.3
+
 - Medien- und Dokument-Verknüpfungen
-- optional OIDC/SSO mit Gramps Web
+- Nextcloud-Verknüpfung für Familienfotos und Urkunden
+- optional Paperless-ngx für Dokumente
 - Datenschutzregeln für lebende Personen weiter verfeinern
+- optional OIDC/SSO mit Gramps Web
 
 ## Spätere Plattformausbaustufen
 
