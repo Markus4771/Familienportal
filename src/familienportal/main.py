@@ -17,6 +17,7 @@ from familienportal.calendar_ui_web import router as calendar_ui_router
 from familienportal.calendar_web import router as calendar_router
 from familienportal.config import get_settings
 from familienportal.database import engine
+from familienportal.mailcow_web import router as mailcow_router
 from familienportal.module_web import router as module_router
 from familienportal.nextcloud_management_web import router as nextcloud_management_router
 from familienportal.nextcloud_web import router as nextcloud_router
@@ -34,6 +35,7 @@ app.include_router(web_router)
 app.include_router(platform_router)
 app.include_router(nextcloud_router)
 app.include_router(nextcloud_management_router)
+app.include_router(mailcow_router)
 app.include_router(calendar_router)
 app.include_router(calendar_ui_router)
 app.include_router(calendar_conflicts_router)
@@ -72,6 +74,7 @@ async def capabilities() -> dict[str, object]:
         "core": ["families", "households", "users", "roles", "sessions", "audit", "platform_management"],
         "connectors": ["nextcloud", "mailcow", "gramps", "homeassistant", "paperless", "immich"],
         "nextcloud": ["health", "users", "user_mapping", "groups", "group_mapping", "shares", "family_folders", "webdav", "caldav", "carddav", "diagnostics"],
-        "calendar": ["personal", "family", "birthdays", "events", "recurrence", "reminders", "ics_import", "ics_export", "month_view", "week_view", "day_view", "calendar_colors", "filters", "event_edit", "event_move", "caldav_bindings", "caldav_pull", "caldav_push", "caldav_delete", "caldav_conflicts", "conflict_resolution", "sync_tokens", "etags"],
+        "mailcow": ["health", "domains", "mailboxes", "aliases", "quota_summary"],
+        "calendar": ["personal", "family", "birthdays", "events", "recurrence", "reminders", "ics_import", "ics_export", "month_view", "week_view", "day_view", "calendar_colors", "filters", "event_edit", "event_move", "caldav_bindings", "caldav_pull", "caldav_push", "caldav_delete", "caldav_conflicts", "conflict_resolution", "sync_tokens", "etags", "automatic_sync", "reminder_queue"],
         "modules": ["calendar", "news", "marketplace", "support", "genealogy", "documents"],
     }
