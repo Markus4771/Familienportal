@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}ICS Import · Familienportal{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-start mb-4"><div><h1 class="h2">ICS Import</h1><p class="text-secondary">Termine aus einem bestehenden Kalender importieren.</p></div><a class="btn btn-outline-secondary" href="/calendar">Zurück</a></div>
+{% if request.query_params.get('imported') %}<div class="alert alert-success">{{ request.query_params.get('imported') }} Termine importiert.</div>{% endif %}
+<div class="card border-0 shadow-sm"><div class="card-body"><form method="post" action="/calendar/import"><label class="form-label">Zielkalender</label><select class="form-select mb-3" name="calendar_id" required>{% for calendar in calendars %}<option value="{{ calendar.id }}">{{ calendar.name }}</option>{% endfor %}</select><label class="form-label">ICS-Inhalt</label><textarea class="form-control font-monospace mb-3" rows="14" name="ics_text" required></textarea><button class="btn btn-primary">Importieren</button></form></div></div>
+{% endblock %}
