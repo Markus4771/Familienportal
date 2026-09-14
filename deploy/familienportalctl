@@ -50,13 +50,13 @@ backup() {
   install -d -m 0750 "$target"
 
   if [[ -d "$APP_DIR" ]]; then
-    tar --exclude="$APP_DIR/.venv" -C "$(dirname "$APP_DIR")" -czf "$target/application.tar.gz" "$(basename "$APP_DIR")"
+    tar --exclude='opt/familienportal/.venv' -C / -czf "$target/application.tar.gz" opt/familienportal
   fi
   if [[ -d "$CONFIG_DIR" ]]; then
-    tar -C "$(dirname "$CONFIG_DIR")" -czf "$target/config.tar.gz" "$(basename "$CONFIG_DIR")"
+    tar -C / -czf "$target/config.tar.gz" etc/familienportal
   fi
   if [[ -d "$DATA_DIR" ]]; then
-    tar -C "$(dirname "$DATA_DIR")" -czf "$target/data.tar.gz" "$(basename "$DATA_DIR")"
+    tar -C / -czf "$target/data.tar.gz" var/lib/familienportal
   fi
 
   load_env
@@ -89,6 +89,8 @@ install_units() {
     familienportal-security-cleanup.timer; do
     install -o root -g root -m 0644 "$APP_DIR/deploy/systemd/$unit" "$SYSTEMD_DIR/$unit"
   done
+  install -o root -g root -m 0755 "$APP_DIR/deploy/familienportalctl" /usr/local/sbin/familienportalctl
+  install -o root -g root -m 0755 "$APP_DIR/deploy/familienportal-release" /usr/local/sbin/familienportal-release
   systemctl daemon-reload
 }
 
@@ -197,6 +199,7 @@ remove_app() {
   systemctl disable --now familienportal-reminder-queue.timer 2>/dev/null || true
   systemctl disable --now familienportal-security-cleanup.timer 2>/dev/null || true
   rm -f "$SYSTEMD_DIR"/familienportal*.service "$SYSTEMD_DIR"/familienportal*.timer
+  rm -f /usr/local/sbin/familienportalctl /usr/local/sbin/familienportal-release
   systemctl daemon-reload
   rm -rf "$APP_DIR"
   if [[ "$purge" == "--purge" ]]; then
