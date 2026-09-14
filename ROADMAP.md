@@ -149,13 +149,25 @@
 - Migration 0009 für Mailcow-Zuordnungen und Reminder-Retry-State
 - Tests für Mailbox-API-Payloads
 
-### Nächste Mailcow-Ausbaustufe
+## 0.6.2 – Benutzer-, Verteiler- und Passwortverwaltung – umgesetzt
 
-- Passwort-Reset-Workflow aus dem Familienportal
-- Postfach löschen mit Schutzmechanismen
-- Alias löschen in der GUI
-- komfortable Verteilerverwaltung mit mehreren Empfängern
+- Administrator kann das Passwort eines Mailcow-Postfachs neu setzen
+- neues Passwort wird nicht im Familienportal gespeichert
+- Portal-Benutzer/Postfach-Zuordnung kann wieder gelöst werden
+- Verteiler mit mehreren Empfängern komfortabel anlegen und bearbeiten
+- Empfänger werden aus Komma, Semikolon oder Zeilenumbrüchen normalisiert
+- doppelte Empfänger werden entfernt
+- Alias/Verteiler aktivieren oder deaktivieren
+- Alias/Verteiler aus der GUI löschen
+- Capabilities für Passwort-Reset, Alias-Löschen, Verteiler und Unmapping
+- keine zusätzliche Datenbankmigration erforderlich
+
+### Nächste Mailcow-/Sicherheits-Ausbaustufe
+
+- Postfach endgültig löschen mit Schutz- und Bestätigungsmechanismus
+- Self-Service-Passwortänderung für Portal-Benutzer
 - optional SSO zu SOGo
+- Passwort-Reset per E-Mail im Sicherheitsblock 0.7
 
 ## Phase 0.7 – Sicherheit
 
