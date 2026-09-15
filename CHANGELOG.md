@@ -2,6 +2,29 @@
 
 Alle wesentlichen Änderungen am Familienportal werden in dieser Datei dokumentiert.
 
+## 0.12.0 – 2026-09-15
+
+### Familienalltag III
+- Dashboard-Integration für Notizen, Listen, offene Listeneinträge, Schnellzugriffe und zuletzt bearbeitete Inhalte erweitert.
+- Listenrechte für bestehende Systemrollen ergänzt, ohne benutzerdefinierte Rollen zu überschreiben.
+- Lebenszyklus für Notizen und Listen mit Archivieren, Wiederherstellen und kontrolliertem endgültigem Löschen vervollständigt.
+- Private Notizen und Listen können gezielt für Familienmitglieder oder Haushalte freigegeben werden; Familiengrenzen werden serverseitig geprüft.
+- Aus Notizen und Listen können Aufgaben und Kalenderereignisse erzeugt und als ContentLinks nachvollzogen werden.
+- ContentLinks gegen inkonsistente Quelle/Ziel/Typ-Kombinationen und logische Duplikate gehärtet.
+- Listeneinträge unterstützen komfortablere Bearbeitung von Menge, Einheit, Kategorie, Verantwortlichem, Fälligkeit, Notiz und Sortierposition.
+- Administrative Zugriffe auf private Inhalte werden ohne vertrauliche Titel, Texte oder Listeneinträge auditiert.
+
+### Datenbank und Qualität
+- Migration 0021: Listenrechte für bestehende Systemrollen.
+- Migration 0022: Freigaben für Notizen und Listen.
+- Migration 0023: Content-Link-Hardening und partielle Eindeutigkeitsindizes.
+- CI prüft Python-Syntax, Importintegrität, den vollständigen Testlauf und die Migrationskette 0013 bis 0023 einschließlich Downgrade und erneutem Upgrade.
+- ContentLink-Validierung bleibt für ältere Strukturprüfungen kompatibel und erzwingt bei explizitem Link-Typ die korrekte Kombination aus Quelle und Ziel.
+
+### Bekannte Betriebsanforderungen
+- Externe Connectoren müssen weiterhin mit den tatsächlich eingesetzten Nextcloud-, Mailcow-, Gramps-Web- und Paperless-ngx-Versionen getestet werden.
+- Native Debian-`.deb`-Paketierung und weiterer mobiler Bedienkomfort bleiben Plattform-/Folgeausbaupunkte.
+
 ## 0.11.0 – 2026-09-15
 
 ### Familienalltag II – Notizen und Listen
