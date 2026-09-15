@@ -35,6 +35,7 @@ from familienportal.passkey_page import router as passkey_page_router
 from familienportal.platform_web import router as platform_router
 from familienportal.security_web import router as security_router
 from familienportal.session_guard import SessionGuardMiddleware
+from familienportal.setup_web import router as setup_router
 from familienportal.tasks_web import router as tasks_router
 from familienportal.totp_qr_web import router as totp_qr_router
 from familienportal.webauthn_web import router as webauthn_router
@@ -49,6 +50,7 @@ app.add_middleware(SessionGuardMiddleware)
 app.add_middleware(SessionMiddleware, secret_key=settings.session_secret_key, https_only=settings.secure_cookies, same_site="lax", max_age=settings.session_max_age_seconds)
 app.mount("/static", StaticFiles(directory=package_dir / "static"), name="static")
 
+app.include_router(setup_router)
 # 0.7.1 policies are intentionally registered before legacy routes with the same paths.
 app.include_router(login_rate_router)
 app.include_router(mfa_rate_router)
@@ -57,7 +59,6 @@ app.include_router(webauthn_router)
 app.include_router(passkey_page_router)
 app.include_router(totp_qr_router)
 app.include_router(admin_security_router)
-
 app.include_router(web_router)
 app.include_router(tasks_router)
 app.include_router(content_router)
@@ -80,11 +81,9 @@ app.include_router(calendar_sync_api_router)
 app.include_router(module_router)
 app.include_router(api_router)
 
-
 @app.get("/health", tags=["system"])
 async def health() -> dict[str, str]:
     return {"status": "ok", "application": settings.app_name, "version": __version__, "environment": settings.environment, "profile": settings.default_profile}
-
 
 @app.get("/ready", tags=["system"])
 def readiness() -> dict[str, str]:
@@ -95,26 +94,15 @@ def readiness() -> dict[str, str]:
         return {"status": "not_ready", "database": exc.__class__.__name__}
     return {"status": "ready", "database": "ok"}
 
-
 @app.get("/api/v1/system/runtime", tags=["system"])
 async def runtime(request: Request) -> dict[str, object]:
-    return {
-        "public_url": settings.public_url,
-        "request_scheme": request.url.scheme,
-        "request_host": request.url.hostname,
-        "client": request.client.host if request.client else None,
-        "secure_cookies": settings.secure_cookies,
-        "trusted_hosts": settings.trusted_hosts,
-        "database_backend": settings.database_backend,
-    }
-
+    return {"public_url": settings.public_url, "request_scheme": request.url.scheme, "request_host": request.url.hostname, "client": request.client.host if request.client else None, "secure_cookies": settings.secure_cookies, "trusted_hosts": settings.trusted_hosts, "database_backend": settings.database_backend}
 
 @app.get("/api/v1/system/capabilities", tags=["system"])
 async def capabilities() -> dict[str, object]:
     return {
-        "profiles": ["small_family", "extended_family"],
-        "extension_types": ["module", "connector"],
-        "core": ["families", "households", "users", "roles", "sessions", "audit", "platform_management"],
+        "profiles": ["small_family", "extended_family"], "extension_types": ["module", "connector"],
+        "core": ["families", "households", "users", "roles", "sessions", "audit", "platform_management", "first_run_setup"],
         "connectors": ["nextcloud", "mailcow", "gramps", "homeassistant", "paperless", "immich"],
         "nextcloud": ["health", "users", "user_mapping", "groups", "group_mapping", "shares", "family_folders", "webdav", "caldav", "carddav", "diagnostics"],
         "mailcow": ["health", "domains", "mailboxes", "mailbox_create", "mailbox_update", "mailbox_password_reset", "aliases", "alias_create", "alias_update", "alias_delete", "distribution_lists", "user_mapping", "user_unmapping", "quota_summary", "sogo_link"],
@@ -122,7 +110,6 @@ async def capabilities() -> dict[str, object]:
         "security": ["totp", "totp_qr", "recovery_codes", "password_reset_email", "revocable_sessions", "session_listing", "admin_mfa_policy", "admin_mfa_emergency_reset", "passkeys", "webauthn_registration", "webauthn_login", "login_rate_limit"],
         "modules": ["calendar", "tasks", "notes", "lists", "news", "marketplace", "support", "genealogy", "documents"],
     }
-
 
 @app.exception_handler(404)
 async def not_found(request: Request, exc: Exception):
