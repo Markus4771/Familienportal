@@ -43,10 +43,10 @@ class ContentLink(Base):
         return None
 
     def targets_are_valid(self) -> bool:
-        """Validate the one-source/one-target shape; kept compatible with 0.11 callers."""
-        return self.expected_kind() is not None
-
-    def kind_is_valid(self) -> bool:
-        """Additionally validate that the persisted kind matches the source/target shape."""
+        """Validate both the one-source/one-target shape and the matching link kind."""
         expected = self.expected_kind()
         return expected is not None and self.kind == expected
+
+    def kind_is_valid(self) -> bool:
+        """Explicit alias for callers that want to emphasize kind validation."""
+        return self.targets_are_valid()
