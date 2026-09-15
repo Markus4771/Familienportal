@@ -12,9 +12,9 @@ from sqlalchemy.orm import Session
 from familienportal.content_audit import audit_list, audit_list_item, audit_note
 from familienportal.database import get_db
 from familienportal.list_models import FamilyList, FamilyListItem, ListKind
-from familienportal.list_permissions import can_create_list, can_edit_list, can_read_list
+from familienportal.list_permissions import can_archive_list, can_create_list, can_delete_list, can_edit_list, can_read_list
 from familienportal.note_models import FamilyNote
-from familienportal.note_permissions import can_archive_note, can_create_note, can_edit_note, can_read_note
+from familienportal.note_permissions import can_archive_note, can_create_note, can_delete_note, can_edit_note, can_read_note
 from familienportal.web import _user_from_session
 
 router = APIRouter(include_in_schema=False)
@@ -28,20 +28,30 @@ def _user(request: Request, db: Session):
     return user
 
 
+def _commit(db: Session) -> None:
+    try:
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+
+
 @router.get("/notes", response_class=HTMLResponse)
-def notes_page(request: Request, db: Session = Depends(get_db)):
+def notes_page(request: Request, archive: bool = False, db: Session = Depends(get_db)):
     user = _user(request, db)
-    notes = list(db.scalars(select(FamilyNote).where(FamilyNote.family_id == user.family_id, FamilyNote.archived_at.is_(None)).order_by(FamilyNote.updated_at.desc())))
-    return templates.TemplateResponse(request, "notes.html", {"user": user, "notes": [n for n in notes if can_read_note(user, n)]})
+    archive_filter = FamilyNote.archived_at.is_not(None) if archive else FamilyNote.archived_at.is_(None)
+    notes = list(db.scalars(select(FamilyNote).where(FamilyNote.family_id == user.family_id, archive_filter).order_by(FamilyNote.updated_at.desc())))
+    visible = [n for n in notes if can_read_note(user, n)]
+    permissions = {str(n.id): {"edit": can_edit_note(user, n), "archive": can_archive_note(user, n), "delete": can_delete_note(user, n)} for n in visible}
+    return templates.TemplateResponse(request, "notes.html", {"user": user, "notes": visible, "archive": archive, "permissions": permissions})
 
 
 @router.post("/notes")
 def create_note(request: Request, title: str = Form(...), content: str = Form(""), is_private: bool = Form(False), db: Session = Depends(get_db)):
     user = _user(request, db)
-    if not can_create_note(user):
-        raise HTTPException(status_code=403)
+    if not can_create_note(user): raise HTTPException(status_code=403)
     note = FamilyNote(family_id=user.family_id, owner_user_id=user.id, title=title.strip(), content=content, is_private=is_private)
-    db.add(note); db.flush(); audit_note(db, "note.created", user, note); db.commit()
+    db.add(note); db.flush(); audit_note(db, "note.created", user, note); _commit(db)
     return RedirectResponse("/notes", status_code=303)
 
 
@@ -50,26 +60,44 @@ def edit_note(request: Request, note_id: UUID, title: str = Form(...), content: 
     user = _user(request, db); note = db.get(FamilyNote, note_id)
     if not note or not can_edit_note(user, note): raise HTTPException(status_code=404 if not note else 403)
     note.title = title.strip(); note.content = content; note.is_private = is_private
-    audit_note(db, "note.updated", user, note); db.commit(); return RedirectResponse("/notes", status_code=303)
+    audit_note(db, "note.updated", user, note); _commit(db); return RedirectResponse("/notes", status_code=303)
 
 
 @router.post("/notes/{note_id}/archive")
 def archive_note(request: Request, note_id: UUID, db: Session = Depends(get_db)):
     user = _user(request, db); note = db.get(FamilyNote, note_id)
     if not note or not can_archive_note(user, note): raise HTTPException(status_code=404 if not note else 403)
-    note.archived_at = datetime.now(timezone.utc); audit_note(db, "note.archived", user, note); db.commit()
+    note.archived_at = datetime.now(timezone.utc); audit_note(db, "note.archived", user, note); _commit(db)
     return RedirectResponse("/notes", status_code=303)
 
 
+@router.post("/notes/{note_id}/restore")
+def restore_note(request: Request, note_id: UUID, db: Session = Depends(get_db)):
+    user = _user(request, db); note = db.get(FamilyNote, note_id)
+    if not note or note.archived_at is None or not can_archive_note(user, note): raise HTTPException(status_code=404 if not note else 403)
+    note.archived_at = None; audit_note(db, "note.restored", user, note); _commit(db)
+    return RedirectResponse("/notes?archive=true", status_code=303)
+
+
+@router.post("/notes/{note_id}/delete")
+def delete_note(request: Request, note_id: UUID, db: Session = Depends(get_db)):
+    user = _user(request, db); note = db.get(FamilyNote, note_id)
+    if not note or not can_delete_note(user, note): raise HTTPException(status_code=404 if not note else 403)
+    audit_note(db, "note.deleted", user, note); db.delete(note); _commit(db)
+    return RedirectResponse("/notes?archive=true", status_code=303)
+
+
 @router.get("/lists", response_class=HTMLResponse)
-def lists_page(request: Request, db: Session = Depends(get_db)):
+def lists_page(request: Request, archive: bool = False, db: Session = Depends(get_db)):
     user = _user(request, db)
-    lists = list(db.scalars(select(FamilyList).where(FamilyList.family_id == user.family_id, FamilyList.archived_at.is_(None)).order_by(FamilyList.updated_at.desc())))
+    archive_filter = FamilyList.archived_at.is_not(None) if archive else FamilyList.archived_at.is_(None)
+    lists = list(db.scalars(select(FamilyList).where(FamilyList.family_id == user.family_id, archive_filter).order_by(FamilyList.updated_at.desc())))
     visible = [item for item in lists if can_read_list(user, item)]
     items = list(db.scalars(select(FamilyListItem).where(FamilyListItem.list_id.in_([x.id for x in visible])).order_by(FamilyListItem.position, FamilyListItem.created_at))) if visible else []
     grouped = {str(x.id): [] for x in visible}
     for item in items: grouped[str(item.list_id)].append(item)
-    return templates.TemplateResponse(request, "lists.html", {"user": user, "lists": visible, "items": grouped, "kinds": list(ListKind)})
+    permissions = {str(x.id): {"edit": can_edit_list(user, x), "archive": can_archive_list(user, x), "delete": can_delete_list(user, x)} for x in visible}
+    return templates.TemplateResponse(request, "lists.html", {"user": user, "lists": visible, "items": grouped, "kinds": list(ListKind), "archive": archive, "permissions": permissions})
 
 
 @router.post("/lists")
@@ -78,22 +106,56 @@ def create_list(request: Request, title: str = Form(...), kind: str = Form(ListK
     if not can_create_list(user): raise HTTPException(status_code=403)
     if kind not in {x.value for x in ListKind}: raise HTTPException(status_code=400, detail="Ungültiger Listentyp")
     family_list = FamilyList(family_id=user.family_id, owner_user_id=user.id, title=title.strip(), description=description, kind=kind, is_private=is_private)
-    db.add(family_list); db.flush(); audit_list(db, "list.created", user, family_list); db.commit()
+    db.add(family_list); db.flush(); audit_list(db, "list.created", user, family_list); _commit(db)
     return RedirectResponse("/lists", status_code=303)
+
+
+@router.post("/lists/{list_id}/edit")
+def edit_list(request: Request, list_id: UUID, title: str = Form(...), kind: str = Form(ListKind.GENERAL.value), description: str = Form(""), is_private: bool = Form(False), db: Session = Depends(get_db)):
+    user = _user(request, db); family_list = db.get(FamilyList, list_id)
+    if not family_list or not can_edit_list(user, family_list): raise HTTPException(status_code=404 if not family_list else 403)
+    if kind not in {x.value for x in ListKind}: raise HTTPException(status_code=400, detail="Ungültiger Listentyp")
+    family_list.title = title.strip(); family_list.kind = kind; family_list.description = description; family_list.is_private = is_private
+    audit_list(db, "list.updated", user, family_list); _commit(db)
+    return RedirectResponse("/lists", status_code=303)
+
+
+@router.post("/lists/{list_id}/archive")
+def archive_list(request: Request, list_id: UUID, db: Session = Depends(get_db)):
+    user = _user(request, db); family_list = db.get(FamilyList, list_id)
+    if not family_list or not can_archive_list(user, family_list): raise HTTPException(status_code=404 if not family_list else 403)
+    family_list.archived_at = datetime.now(timezone.utc); audit_list(db, "list.archived", user, family_list); _commit(db)
+    return RedirectResponse("/lists", status_code=303)
+
+
+@router.post("/lists/{list_id}/restore")
+def restore_list(request: Request, list_id: UUID, db: Session = Depends(get_db)):
+    user = _user(request, db); family_list = db.get(FamilyList, list_id)
+    if not family_list or family_list.archived_at is None or not can_archive_list(user, family_list): raise HTTPException(status_code=404 if not family_list else 403)
+    family_list.archived_at = None; audit_list(db, "list.restored", user, family_list); _commit(db)
+    return RedirectResponse("/lists?archive=true", status_code=303)
+
+
+@router.post("/lists/{list_id}/delete")
+def delete_list(request: Request, list_id: UUID, db: Session = Depends(get_db)):
+    user = _user(request, db); family_list = db.get(FamilyList, list_id)
+    if not family_list or not can_delete_list(user, family_list): raise HTTPException(status_code=404 if not family_list else 403)
+    audit_list(db, "list.deleted", user, family_list); db.delete(family_list); _commit(db)
+    return RedirectResponse("/lists?archive=true", status_code=303)
 
 
 @router.post("/lists/{list_id}/items")
 def add_list_item(request: Request, list_id: UUID, title: str = Form(...), quantity: float | None = Form(None), unit: str = Form(""), category: str = Form(""), db: Session = Depends(get_db)):
     user = _user(request, db); family_list = db.get(FamilyList, list_id)
-    if not family_list or not can_edit_list(user, family_list): raise HTTPException(status_code=404 if not family_list else 403)
+    if not family_list or family_list.archived_at is not None or not can_edit_list(user, family_list): raise HTTPException(status_code=404 if not family_list else 403)
     item = FamilyListItem(list_id=family_list.id, title=title.strip(), quantity=quantity, unit=unit or None, category=category or None)
-    db.add(item); db.flush(); audit_list_item(db, "list_item.created", user, item); db.commit()
+    db.add(item); db.flush(); audit_list_item(db, "list_item.created", user, item); _commit(db)
     return RedirectResponse("/lists", status_code=303)
 
 
 @router.post("/lists/{list_id}/items/{item_id}/toggle")
 def toggle_list_item(request: Request, list_id: UUID, item_id: UUID, db: Session = Depends(get_db)):
     user = _user(request, db); family_list = db.get(FamilyList, list_id); item = db.get(FamilyListItem, item_id)
-    if not family_list or not item or item.list_id != family_list.id or not can_edit_list(user, family_list): raise HTTPException(status_code=404)
-    item.is_done = not item.is_done; audit_list_item(db, "list_item.toggled", user, item); db.commit()
+    if not family_list or family_list.archived_at is not None or not item or item.list_id != family_list.id or not can_edit_list(user, family_list): raise HTTPException(status_code=404)
+    item.is_done = not item.is_done; audit_list_item(db, "list_item.toggled", user, item); _commit(db)
     return RedirectResponse("/lists", status_code=303)
