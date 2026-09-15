@@ -13,6 +13,7 @@ from familienportal.api import DEFAULT_ROLES, audit
 from familienportal.auth_models import LoginSession
 from familienportal.auth_security import create_session, get_mfa_state, valid_session
 from familienportal.config import get_settings
+from familienportal.content_dashboard import content_dashboard
 from familienportal.database import get_db
 from familienportal.models import Family, Household, Role, User, UserStatus
 from familienportal.platform_runtime import configured_connectors, enabled_modules, family_settings
@@ -138,7 +139,7 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
     user_count = db.scalar(select(func.count()).select_from(User).where(User.family_id == user.family_id)) or 0
     household_count = db.scalar(select(func.count()).select_from(Household).where(Household.family_id == user.family_id)) or 0
     modules = enabled_modules(db, user.family_id, user); connectors = configured_connectors(db, user.family_id); portal_settings = family_settings(db, user.family_id)
-    return templates.TemplateResponse(request=request, name="dashboard.html", context=_context(request, user, family=family, user_count=user_count, household_count=household_count, modules=modules, connectors=connectors, portal_settings=portal_settings, task_dashboard=task_dashboard(db, user), navigation_modules=[item for item in modules if item.get("menu")]))
+    return templates.TemplateResponse(request=request, name="dashboard.html", context=_context(request, user, family=family, user_count=user_count, household_count=household_count, modules=modules, connectors=connectors, portal_settings=portal_settings, task_dashboard=task_dashboard(db, user), content_dashboard=content_dashboard(db, user), navigation_modules=[item for item in modules if item.get("menu")]))
 
 
 @router.get("/admin", response_class=HTMLResponse)
