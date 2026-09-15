@@ -20,6 +20,36 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e '.[dev]'
+      - name: Syntax check
+        run: python -m compileall -q src tests migrations
+      - name: Import integrity
+        env:
+          FAMILIENPORTAL_DATABASE_URL: sqlite:///./ci-imports.db
+          FAMILIENPORTAL_SESSION_SECRET_KEY: ci-session-secret
+          FAMILIENPORTAL_SECURITY_ENCRYPTION_KEY: ci-security-encryption-key
+        run: |
+          python - <<'PY'
+          import importlib
+          import pkgutil
+          import familienportal
+
+          failures = []
+          modules = sorted(
+              module.name
+              for module in pkgutil.walk_packages(familienportal.__path__, familienportal.__name__ + ".")
+          )
+          for name in modules:
+              try:
+                  importlib.import_module(name)
+              except Exception as exc:
+                  failures.append((name, type(exc).__name__, str(exc)))
+
+          if failures:
+              for name, error_type, message in failures:
+                  print(f"IMPORT FAILED: {name}: {error_type}: {message}")
+              raise SystemExit(1)
+          print(f"Imported {len(modules)} familienportal modules successfully")
+          PY
       - name: Test
         env:
           FAMILIENPORTAL_DATABASE_URL: sqlite:///./ci-familienportal.db
