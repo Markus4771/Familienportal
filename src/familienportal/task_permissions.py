@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from uuid import UUID
+
 from familienportal.models import User
 from familienportal.permissions import has_permission
 from familienportal.task_models import FamilyTask
@@ -50,6 +52,20 @@ def can_assign_task(user: User, task: FamilyTask | None = None) -> bool:
     if task is not None and not same_family(user, task):
         return False
     return user.is_superadmin or has_permission(user, TASK_ASSIGN) or has_permission(user, TASK_MANAGE)
+
+
+def can_set_assignee(user: User, assignee_user_id: UUID | None, task: FamilyTask | None = None) -> bool:
+    """Allow users without tasks.assign to keep/choose only themselves or no assignee.
+
+    Changing an existing task away from another assignee always requires tasks.assign.
+    """
+    if task is not None and not same_family(user, task):
+        return False
+    if can_assign_task(user, task):
+        return True
+    if task is not None and task.assignee_user_id not in {None, user.id}:
+        return assignee_user_id == task.assignee_user_id
+    return assignee_user_id in {None, user.id}
 
 
 def can_complete_task(user: User, task: FamilyTask) -> bool:
