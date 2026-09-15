@@ -4,11 +4,14 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
   <div>
     <h1 class="h3 mb-1">Integrationen</h1>
-    <p class="text-muted mb-0">Zentrale Verwaltung der angebundenen Dienste.</p>
+    <p class="text-muted mb-0">Zentrale Verwaltung und Diagnose der angebundenen Dienste.</p>
   </div>
-  <a class="btn btn-outline-secondary" href="/platform">Plattform</a>
+  <div class="d-flex gap-2">
+    <form method="post" action="/admin/integrations/health"><button class="btn btn-primary" type="submit">Alle Integrationen prüfen</button></form>
+    <a class="btn btn-outline-secondary" href="/platform">Plattform</a>
+  </div>
 </div>
-
+{% if request.query_params.get('checked') %}<div class="alert alert-info">Integrationsprüfung abgeschlossen. Die gespeicherten Statuswerte wurden aktualisiert.</div>{% endif %}
 <div class="row g-3 mb-4">
   <div class="col-6 col-lg"><div class="card h-100"><div class="card-body"><div class="text-muted small">Gesamt</div><div class="fs-3 fw-semibold">{{ summary.total }}</div></div></div></div>
   <div class="col-6 col-lg"><div class="card h-100"><div class="card-body"><div class="text-muted small">Konfiguriert</div><div class="fs-3 fw-semibold">{{ summary.configured }}</div></div></div></div>
@@ -16,32 +19,20 @@
   <div class="col-6 col-lg"><div class="card h-100"><div class="card-body"><div class="text-muted small">Erreichbar</div><div class="fs-3 fw-semibold">{{ summary.healthy }}</div></div></div></div>
   <div class="col-6 col-lg"><div class="card h-100"><div class="card-body"><div class="text-muted small">Fehler</div><div class="fs-3 fw-semibold">{{ summary.failing }}</div></div></div></div>
 </div>
-
 <div class="row g-3">
 {% for item in integrations %}
-  <div class="col-12 col-xl-6">
-    <div class="card h-100">
-      <div class="card-body">
-        <div class="d-flex justify-content-between gap-3">
-          <div>
-            <div class="text-muted small">{{ item.category }}</div>
-            <h2 class="h5 mb-1">{{ item.name }}</h2>
-            <p class="text-muted">{{ item.description }}</p>
-          </div>
-          <div class="text-end">
-            {% if not item.configured %}<span class="badge text-bg-secondary">Nicht konfiguriert</span>
-            {% elif not item.enabled %}<span class="badge text-bg-secondary">Deaktiviert</span>
-            {% elif item.health_status in ['healthy', 'ok'] %}<span class="badge text-bg-success">OK</span>
-            {% elif item.health_status in ['failed', 'error', 'unhealthy'] %}<span class="badge text-bg-danger">Fehler</span>
-            {% else %}<span class="badge text-bg-warning">{{ item.health_status }}</span>{% endif %}
-          </div>
-        </div>
-        {% if item.health_message %}<div class="small mb-3"><strong>Status:</strong> {{ item.health_message }}</div>{% endif %}
-        {% if item.health_checked_at %}<div class="small text-muted mb-3">Letzte Prüfung: {{ item.health_checked_at }}</div>{% endif %}
-        <a class="btn btn-primary btn-sm" href="{{ item.admin_path }}">Konfiguration öffnen</a>
-      </div>
-    </div>
-  </div>
+  <div class="col-12 col-xl-6"><div class="card h-100"><div class="card-body">
+    <div class="d-flex justify-content-between gap-3"><div><div class="text-muted small">{{ item.category }}</div><h2 class="h5 mb-1">{{ item.name }}</h2><p class="text-muted">{{ item.description }}</p></div><div class="text-end">
+      {% if not item.configured %}<span class="badge text-bg-secondary">Nicht konfiguriert</span>
+      {% elif not item.enabled %}<span class="badge text-bg-secondary">Deaktiviert</span>
+      {% elif item.health_status in ['healthy', 'ok'] %}<span class="badge text-bg-success">OK</span>
+      {% elif item.health_status in ['failed', 'error', 'unhealthy'] %}<span class="badge text-bg-danger">Fehler</span>
+      {% else %}<span class="badge text-bg-warning">{{ item.health_status }}</span>{% endif %}
+    </div></div>
+    {% if item.health_message %}<div class="small mb-2"><strong>Diagnose:</strong> {{ item.health_message }}</div>{% endif %}
+    {% if item.health_checked_at %}<div class="small text-muted mb-3">Letzte Prüfung: {{ item.health_checked_at }}</div>{% endif %}
+    <a class="btn btn-outline-primary btn-sm" href="{{ item.admin_path }}">Konfiguration öffnen</a>
+  </div></div></div>
 {% endfor %}
 </div>
 {% endblock %}
