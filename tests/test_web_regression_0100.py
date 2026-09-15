@@ -24,8 +24,10 @@ def test_content_web_routes_are_registered():
     routes = _routes(content_router.routes)
     assert {
         ("/notes", "GET"), ("/notes", "POST"), ("/notes/{note_id}/edit", "POST"),
+        ("/notes/{note_id}/share", "POST"), ("/notes/{note_id}/shares/{share_id}/delete", "POST"),
         ("/notes/{note_id}/archive", "POST"), ("/notes/{note_id}/restore", "POST"), ("/notes/{note_id}/delete", "POST"),
         ("/lists", "GET"), ("/lists", "POST"), ("/lists/{list_id}/edit", "POST"),
+        ("/lists/{list_id}/share", "POST"), ("/lists/{list_id}/shares/{share_id}/delete", "POST"),
         ("/lists/{list_id}/archive", "POST"), ("/lists/{list_id}/restore", "POST"), ("/lists/{list_id}/delete", "POST"),
         ("/lists/{list_id}/items", "POST"), ("/lists/{list_id}/items/{item_id}/toggle", "POST"),
     } <= routes
