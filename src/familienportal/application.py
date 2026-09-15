@@ -7,6 +7,7 @@ from familienportal.gramps_person_web import router as gramps_person_router
 from familienportal.gramps_transfer_web import router as gramps_transfer_router
 from familienportal.gramps_web import router as gramps_router
 from familienportal.main import app
+from familienportal.paperless_web import router as paperless_router
 from familienportal.role_mfa_policy import RoleMfaPolicyMiddleware
 from familienportal.security_http import CsrfOriginMiddleware, SecurityHeadersMiddleware
 
@@ -19,6 +20,7 @@ app.include_router(gramps_transfer_router)
 app.include_router(gramps_person_router)
 app.include_router(genealogy_documents_router)
 app.include_router(genealogy_picker_router)
+app.include_router(paperless_router)
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(CsrfOriginMiddleware)
 app.add_middleware(RoleMfaPolicyMiddleware)
