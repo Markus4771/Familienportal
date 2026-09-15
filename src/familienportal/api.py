@@ -18,9 +18,9 @@ settings = get_settings()
 
 DEFAULT_ROLES: dict[str, str] = {
     "Administrator": "*",
-    "Erwachsene": "dashboard.read,calendar.*,tasks.read,tasks.create,tasks.edit,tasks.assign,tasks.complete,tasks.delete,tasks.manage,documents.read,chat.*",
-    "Kind": "dashboard.read,calendar.read,tasks.read,tasks.create,tasks.edit,tasks.complete,chat.use",
-    "Gast": "dashboard.read,calendar.read,tasks.read",
+    "Erwachsene": "dashboard.read,calendar.*,tasks.read,tasks.create,tasks.edit,tasks.assign,tasks.complete,tasks.delete,tasks.manage,notes.read,notes.create,notes.edit,notes.archive,notes.delete,notes.share,notes.manage,lists.read,lists.create,lists.edit,lists.assign,lists.archive,lists.delete,lists.manage,documents.read,chat.*",
+    "Kind": "dashboard.read,calendar.read,tasks.read,tasks.create,tasks.edit,tasks.complete,notes.read,notes.create,notes.edit,notes.archive,notes.share,lists.read,lists.create,lists.edit,lists.archive,chat.use",
+    "Gast": "dashboard.read,calendar.read,tasks.read,notes.read,lists.read",
 }
 
 
