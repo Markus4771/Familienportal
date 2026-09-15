@@ -3,9 +3,11 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from familienportal.database import get_db
+from familienportal.genealogy_document_models import GenealogyDocumentLink
 from familienportal.gramps_media import media_handles, normalize_media
 from familienportal.gramps_relationships import relationship_summary
 from familienportal.gramps_web import _client, _state
@@ -26,7 +28,6 @@ def person_detail(handle: str, request: Request, db: Session = Depends(get_db)):
     state = _state(db, user.family_id)
     if not state or not state.enabled:
         raise HTTPException(status_code=409, detail="Gramps Web ist nicht aktiviert")
-
     client = _client(state)
     person = client.person(handle)
     families = client.families(pagesize=200)
@@ -39,9 +40,5 @@ def person_detail(handle: str, request: Request, db: Session = Depends(get_db)):
             media.append(normalize_media(client.media(media_handle)))
         except Exception:
             continue
-
-    return templates.TemplateResponse(
-        request=request,
-        name="genealogy_person.html",
-        context={"user": user, "is_admin": user.is_superadmin, "person": person, "relations": relations, "media": media, "gramps_base_url": state.base_url.rstrip("/") if state.base_url else ""},
-    )
+    document_links = list(db.scalars(select(GenealogyDocumentLink).where(GenealogyDocumentLink.family_id == user.family_id, GenealogyDocumentLink.person_handle == handle).order_by(GenealogyDocumentLink.provider, GenealogyDocumentLink.title)))
+    return templates.TemplateResponse(request=request, name="genealogy_person.html", context={"user": user, "is_admin": user.is_superadmin, "person": person, "relations": relations, "media": media, "document_links": document_links, "can_link_documents": user.is_superadmin or has_permission(user, "genealogy.write"), "gramps_base_url": state.base_url.rstrip("/") if state.base_url else ""})
