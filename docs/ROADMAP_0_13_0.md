@@ -11,9 +11,9 @@ Status: Entwicklung (`0.13.0-dev`)
 1. [x] Entwicklungsstand auf `0.13.0-dev` setzen und Roadmap dokumentieren.
 2. [x] Debian-Installer für Debian 13 härten: Voraussetzungen, Systembenutzer, Verzeichnisse, Python-Umgebung, systemd-Dienste, Test-/Produktionsmodus und Gesundheitsprüfung.
 3. [x] Native `.deb`-Paketbasis ergänzen: Debian-Metadaten, Build-Skript, Installations-/Upgrade-Skripte und systemd-Integration.
-4. [ ] Browserbasierter Setup-Assistent für Familie, Administrator, Datenbank, Basis-URL und Grundkonfiguration.
-5. [ ] Update-System mit Versionsprüfung, Backup vor Update, Paketaktualisierung, Alembic-Migration und Integritätsprüfung.
-6. [ ] Backup & Restore für Datenbank, Konfiguration und lokale Daten vervollständigen.
+4. [x] Browserbasierter First-Run-Setup-Assistent für Familie, Haushalt, Profil und ersten Superadministrator; nach erfolgreicher Einrichtung gesperrt. Infrastrukturwerte wie Datenbank und öffentliche URL bleiben bewusst in der geschützten Serverkonfiguration.
+5. [x] Update-System auf Release-`.deb` ausgerichtet: Versionsprüfung, Pflicht-Backup, Paketaktualisierung, Alembic-Migration und Readiness-Prüfung. Vollständiger 0.12→0.13-Live-Test folgt in Punkt 11.
+6. [x] Backup & Restore für Anwendung, Konfiguration, lokale Daten sowie SQLite/PostgreSQL; Backup-Liste, Prüfsummenprüfung und Restore/Rollback ergänzt.
 7. [ ] Integrations-Assistent für Nextcloud, Mailcow, Paperless-ngx und Gramps Web mit Verbindungstest.
 8. [ ] Mobile Oberfläche für Dashboard, Aufgaben, Listen, Notizen und Kalender weiter optimieren.
 9. [ ] Navigation und Startseite vereinheitlichen; Schnellaktionen und personalisierbares Familien-Dashboard ausbauen.
