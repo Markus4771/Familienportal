@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block title %}Datenschutz · Ahnenforschung{% endblock %}
+{% block content %}
+<h1 class="h2">Datenschutz der Ahnenforschung</h1>
+<p class="text-secondary">Familienweite Regeln für Daten lebender Personen.</p>
+{% if request.query_params.get('saved') %}<div class="alert alert-success">Datenschutzregeln gespeichert.</div>{% endif %}
+<div class="card"><div class="card-body"><form method="post" action="/genealogy/privacy"><div class="mb-3"><label class="form-label">Lebende Personen ohne Sonderberechtigung</label><select class="form-select" name="living_mode"><option value="redact" {% if mode == 'redact' %}selected{% endif %}>Person anzeigen, sensible Daten ausblenden</option><option value="hide" {% if mode == 'hide' %}selected{% endif %}>Person vollständig ausblenden</option></select></div><div class="mb-3"><label class="form-label">Altersgrenze ohne Sterbedatum</label><div class="input-group"><input class="form-control" type="number" min="80" max="130" name="living_age_years" value="{{ age }}"><span class="input-group-text">Jahre</span></div><div class="form-text">Bei unbekanntem Status wird aus Datenschutzgründen von einer lebenden Person ausgegangen.</div></div><div class="alert alert-info">Benutzer mit <code>genealogy.living.read</code> und Superadmins dürfen vollständige Daten lebender Personen sehen. Fotos und Dokumente folgen derselben Regel.</div><button class="btn btn-primary">Datenschutzregeln speichern</button></form></div></div>
+{% endblock %}
