@@ -3,12 +3,31 @@ from __future__ import annotations
 from datetime import date
 from typing import Any
 
+from sqlalchemy import select
+
 from familienportal.permissions import has_permission
+from familienportal.platform_models import FamilySetting
+
+KEY_MODE = "genealogy.privacy.living_mode"
+KEY_AGE = "genealogy.privacy.living_age_years"
 
 
 def _profile(person: dict[str, Any]) -> dict[str, Any]:
     value = person.get("profile")
     return value if isinstance(value, dict) else person
+
+
+def privacy_policy(db, family_id) -> tuple[str, int]:
+    rows = db.scalars(select(FamilySetting).where(FamilySetting.family_id == family_id, FamilySetting.setting_key.in_([KEY_MODE, KEY_AGE]))).all()
+    values = {row.setting_key: row.value for row in rows}
+    mode = values.get(KEY_MODE, "redact")
+    if mode not in {"redact", "hide"}:
+        mode = "redact"
+    try:
+        age = min(130, max(80, int(values.get(KEY_AGE, "110"))))
+    except ValueError:
+        age = 110
+    return mode, age
 
 
 def is_living(person: dict[str, Any], age_years: int = 110) -> bool:
@@ -48,3 +67,11 @@ def redact_living(person: dict[str, Any]) -> dict[str, Any]:
     for key in ("birth", "birth_date", "death", "death_date", "address", "addresses", "email", "phone", "phones", "notes", "note", "attributes"):
         result.pop(key, None)
     return result
+
+
+def visible_person(user, person: dict[str, Any], mode: str, age_years: int) -> dict[str, Any] | None:
+    if can_view_living(user, person, age_years):
+        return person
+    if mode == "hide":
+        return None
+    return redact_living(person)
