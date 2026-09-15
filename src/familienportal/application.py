@@ -1,3 +1,5 @@
+from familienportal.admin_status_api import router as admin_status_api_router
+from familienportal.admin_status_web import router as admin_status_web_router
 from familienportal.extensions import BUILTIN_MODULES
 from familienportal.genealogy_document_proxy import router as genealogy_document_proxy_router
 from familienportal.genealogy_documents_web import router as genealogy_documents_router
@@ -27,6 +29,8 @@ app.include_router(genealogy_document_proxy_router)
 app.include_router(genealogy_privacy_router)
 app.include_router(paperless_router)
 app.include_router(integration_admin_router)
+app.include_router(admin_status_web_router)
+app.include_router(admin_status_api_router)
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(CsrfOriginMiddleware)
 app.add_middleware(RoleMfaPolicyMiddleware)
