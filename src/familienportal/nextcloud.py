@@ -22,6 +22,13 @@ class NextcloudHealth:
     product: str | None = None
 
 
+@dataclass(slots=True)
+class NextcloudBinary:
+    content: bytes
+    content_type: str
+    filename: str
+
+
 class NextcloudClient:
     def __init__(self, base_url: str, username: str, password: str, timeout: float = 8.0) -> None:
         self.base_url = base_url.rstrip("/")
@@ -31,7 +38,7 @@ class NextcloudClient:
 
     def _headers(self, *, ocs: bool = False, content_type: str | None = None) -> dict[str, str]:
         token = base64.b64encode(f"{self.username}:{self.password}".encode()).decode()
-        headers = {"Authorization": f"Basic {token}", "User-Agent": "Familienportal/0.4.1"}
+        headers = {"Authorization": f"Basic {token}", "User-Agent": "Familienportal/0.8.5"}
         if ocs:
             headers["OCS-APIRequest"] = "true"
             headers["Accept"] = "application/json"
@@ -98,11 +105,13 @@ class NextcloudClient:
 
     def dav_endpoints(self) -> dict[str, str]:
         user = quote(self.username, safe="")
-        return {
-            "webdav": f"{self.base_url}/remote.php/dav/files/{user}/",
-            "caldav": f"{self.base_url}/remote.php/dav/calendars/{user}/",
-            "carddav": f"{self.base_url}/remote.php/dav/addressbooks/users/{user}/",
-        }
+        return {"webdav": f"{self.base_url}/remote.php/dav/files/{user}/", "caldav": f"{self.base_url}/remote.php/dav/calendars/{user}/", "carddav": f"{self.base_url}/remote.php/dav/addressbooks/users/{user}/"}
+
+    def _safe_relative_path(self, relative_path: str) -> str:
+        path = relative_path.strip("/")
+        if not path or any(part in {".", ".."} for part in path.split("/")):
+            raise NextcloudError("Ungültiger Dateipfad.")
+        return path
 
     def _dav_path(self, relative_path: str = "") -> str:
         user = quote(self.username, safe="")
@@ -110,14 +119,21 @@ class NextcloudClient:
         suffix = f"/{quote(path, safe='/')}" if path else ""
         return f"/remote.php/dav/files/{user}{suffix}/"
 
+    def _dav_file_path(self, relative_path: str) -> str:
+        user = quote(self.username, safe="")
+        path = self._safe_relative_path(relative_path)
+        return f"/remote.php/dav/files/{user}/{quote(path, safe='/')}"
+
+    def get_file(self, relative_path: str) -> NextcloudBinary:
+        path = self._safe_relative_path(relative_path)
+        _, body, headers = self._request("GET", self._dav_file_path(path))
+        content_type = headers.get("Content-Type", "application/octet-stream").split(";", 1)[0].strip()
+        filename = path.rsplit("/", 1)[-1]
+        return NextcloudBinary(body, content_type, filename)
+
     def list_files(self, relative_path: str = "", depth: int = 1) -> list[dict[str, str | None]]:
         body = b'<?xml version="1.0" encoding="utf-8" ?><d:propfind xmlns:d="DAV:"><d:prop><d:displayname/><d:getcontentlength/><d:getcontenttype/><d:getlastmodified/></d:prop></d:propfind>'
-        request = Request(
-            f"{self.base_url}{self._dav_path(relative_path)}",
-            method="PROPFIND",
-            data=body,
-            headers={**self._headers(content_type="application/xml; charset=utf-8"), "Depth": str(depth)},
-        )
+        request = Request(f"{self.base_url}{self._dav_path(relative_path)}", method="PROPFIND", data=body, headers={**self._headers(content_type="application/xml; charset=utf-8"), "Depth": str(depth)})
         try:
             with urlopen(request, timeout=self.timeout) as response:
                 xml = response.read()
@@ -133,19 +149,11 @@ class NextcloudClient:
             prop = response.find("d:propstat/d:prop", ns)
             if prop is None:
                 continue
-            items.append({
-                "href": href,
-                "name": prop.findtext("d:displayname", default="", namespaces=ns),
-                "size": prop.findtext("d:getcontentlength", default=None, namespaces=ns),
-                "content_type": prop.findtext("d:getcontenttype", default=None, namespaces=ns),
-                "modified": prop.findtext("d:getlastmodified", default=None, namespaces=ns),
-            })
+            items.append({"href": href, "name": prop.findtext("d:displayname", default="", namespaces=ns), "size": prop.findtext("d:getcontentlength", default=None, namespaces=ns), "content_type": prop.findtext("d:getcontenttype", default=None, namespaces=ns), "modified": prop.findtext("d:getlastmodified", default=None, namespaces=ns)})
         return items
 
     def create_folder(self, relative_path: str) -> None:
-        path = relative_path.strip("/")
-        if not path or any(part in {".", ".."} for part in path.split("/")):
-            raise NextcloudError("Ungültiger Ordnerpfad.")
+        path = self._safe_relative_path(relative_path)
         request = Request(f"{self.base_url}{self._dav_path(path)}", method="MKCOL", headers=self._headers())
         try:
             with urlopen(request, timeout=self.timeout) as response:
