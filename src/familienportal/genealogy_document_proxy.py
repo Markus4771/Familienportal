@@ -9,7 +9,8 @@ from sqlalchemy.orm import Session
 
 from familienportal.database import get_db
 from familienportal.genealogy_document_models import GenealogyDocumentLink
-from familienportal.genealogy_privacy import can_view_living
+from familienportal.genealogy_privacy import can_view_living, privacy_policy
+from familienportal.gramps import GrampsError
 from familienportal.gramps_web import _client as gramps_client, _state as gramps_state
 from familienportal.nextcloud import NextcloudError
 from familienportal.nextcloud_web import _client as nextcloud_client, _state as nextcloud_state
@@ -37,9 +38,10 @@ def _link(link_id: UUID, request: Request, db: Session) -> tuple[object, Genealo
         raise HTTPException(status_code=409, detail="Gramps Web ist nicht aktiviert")
     try:
         person = gramps_client(state).person(link.person_handle)
-    except Exception as exc:
+    except GrampsError as exc:
         raise HTTPException(status_code=502, detail="Datenschutzstatus der Person konnte nicht geprüft werden") from exc
-    if not can_view_living(user, person):
+    _, age = privacy_policy(db, user.family_id)
+    if not can_view_living(user, person, age):
         raise HTTPException(status_code=403, detail="Dokumente lebender Personen sind geschützt")
     return user, link
 
