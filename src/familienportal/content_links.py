@@ -18,12 +18,8 @@ class ContentLinkKind(StrEnum):
 
 
 class ContentLink(Base):
-    """Typed, family-scoped links between 0.11 content and existing task/calendar objects."""
-
     __tablename__ = "content_links"
-    __table_args__ = (
-        UniqueConstraint("kind", "note_id", "list_id", "task_id", "event_id", name="uq_content_link_target"),
-    )
+    __table_args__ = (UniqueConstraint("kind", "note_id", "list_id", "task_id", "event_id", name="uq_content_link_target"),)
 
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     family_id: Mapped[UUID] = mapped_column(ForeignKey("families.id", ondelete="CASCADE"), index=True)
@@ -36,7 +32,13 @@ class ContentLink(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     def targets_are_valid(self) -> bool:
-        note_source = self.note_id is not None and self.list_id is None
-        list_source = self.list_id is not None and self.note_id is None
-        one_target = (self.task_id is None) != (self.event_id is None)
-        return (note_source or list_source) and one_target
+        expected = None
+        if self.note_id is not None and self.list_id is None and self.task_id is not None and self.event_id is None:
+            expected = ContentLinkKind.NOTE_TASK.value
+        elif self.note_id is not None and self.list_id is None and self.event_id is not None and self.task_id is None:
+            expected = ContentLinkKind.NOTE_EVENT.value
+        elif self.list_id is not None and self.note_id is None and self.task_id is not None and self.event_id is None:
+            expected = ContentLinkKind.LIST_TASK.value
+        elif self.list_id is not None and self.note_id is None and self.event_id is not None and self.task_id is None:
+            expected = ContentLinkKind.LIST_EVENT.value
+        return expected is not None and self.kind == expected
