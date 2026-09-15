@@ -80,9 +80,17 @@ def can_complete_task(user: User, task: FamilyTask) -> bool:
 
 
 def can_delete_task(user: User, task: FamilyTask) -> bool:
+    """Permission to remove a task from normal use by archiving it."""
     if not same_family(user, task):
         return False
     return user.is_superadmin or has_permission(user, TASK_MANAGE) or (is_owner(user, task) and has_permission(user, TASK_DELETE))
+
+
+def can_permanently_delete_task(user: User, task: FamilyTask) -> bool:
+    """Hard deletion is an administrative operation only."""
+    if not same_family(user, task):
+        return False
+    return user.is_superadmin or has_permission(user, TASK_MANAGE)
 
 
 def visible_tasks(user: User, tasks: list[FamilyTask]) -> list[FamilyTask]:
