@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import socket
 from dataclasses import dataclass
 from typing import Any
 from urllib.error import HTTPError, URLError
@@ -22,21 +23,38 @@ class GrampsClient:
     def __init__(self, base_url: str, access_token: str, timeout: float = 10.0) -> None:
         self.base_url = base_url.rstrip("/")
         self.access_token = access_token
-        self.timeout = timeout
+        self.timeout = min(60.0, max(1.0, float(timeout)))
 
     def _request(self, path: str) -> Any:
+        if not path.startswith("/api/") or "://" in path or "\r" in path or "\n" in path:
+            raise GrampsError("Ungültiger Gramps-Web-API-Pfad")
         request = Request(f"{self.base_url}{path}", headers={"Accept": "application/json", "Authorization": f"Bearer {self.access_token}", "User-Agent": "Familienportal/0.8.7"})
         try:
             with urlopen(request, timeout=self.timeout) as response:
-                raw = response.read().decode("utf-8")
-                return json.loads(raw) if raw else None
+                raw = response.read()
+                if not raw:
+                    return None
+                try:
+                    return json.loads(raw.decode("utf-8"))
+                except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+                    raise GrampsError("Ungültige Gramps-Web-API-Antwort") from exc
         except HTTPError as exc:
             detail = exc.read().decode(errors="replace")[:500]
+            if exc.code in {401, 403}:
+                raise GrampsError("Gramps-Web-Zugriff wurde abgelehnt; Access Token und Berechtigungen prüfen") from exc
+            if exc.code == 404:
+                raise GrampsError("Gramps-Web-Objekt oder API-Endpunkt wurde nicht gefunden") from exc
+            if exc.code == 429:
+                raise GrampsError("Gramps Web begrenzt derzeit die Anzahl der API-Anfragen") from exc
+            if 500 <= exc.code <= 599:
+                raise GrampsError(f"Gramps Web ist vorübergehend nicht verfügbar (HTTP {exc.code})") from exc
             raise GrampsError(f"Gramps Web API HTTP {exc.code}: {detail}") from exc
+        except (TimeoutError, socket.timeout) as exc:
+            raise GrampsError(f"Zeitüberschreitung bei Gramps Web nach {self.timeout:g} Sekunden") from exc
         except URLError as exc:
+            if isinstance(exc.reason, (TimeoutError, socket.timeout)):
+                raise GrampsError(f"Zeitüberschreitung bei Gramps Web nach {self.timeout:g} Sekunden") from exc
             raise GrampsError(f"Gramps-Web-Verbindung fehlgeschlagen: {exc.reason}") from exc
-        except (ValueError, json.JSONDecodeError) as exc:
-            raise GrampsError("Ungültige Gramps-Web-API-Antwort") from exc
 
     @staticmethod
     def _rows(value: Any) -> list[dict[str, Any]]:
