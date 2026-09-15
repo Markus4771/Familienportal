@@ -11,7 +11,7 @@ def _profile(person: dict[str, Any]) -> dict[str, Any]:
     return value if isinstance(value, dict) else person
 
 
-def is_living(person: dict[str, Any]) -> bool:
+def is_living(person: dict[str, Any], age_years: int = 110) -> bool:
     profile = _profile(person)
     death = profile.get("death") or person.get("death") or profile.get("death_date") or person.get("death_date")
     if death:
@@ -29,11 +29,11 @@ def is_living(person: dict[str, Any]) -> bool:
             year = raw
         elif isinstance(raw, str) and len(raw) >= 4 and raw[:4].isdigit():
             year = int(raw[:4])
-    return year is None or date.today().year - year < 110
+    return year is None or date.today().year - year < age_years
 
 
-def can_view_living(user, person: dict[str, Any]) -> bool:
-    return not is_living(person) or user.is_superadmin or has_permission(user, "genealogy.living.read")
+def can_view_living(user, person: dict[str, Any], age_years: int = 110) -> bool:
+    return not is_living(person, age_years) or user.is_superadmin or has_permission(user, "genealogy.living.read")
 
 
 def redact_living(person: dict[str, Any]) -> dict[str, Any]:
