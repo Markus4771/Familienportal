@@ -6,6 +6,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from familienportal.database import get_db
+from familienportal.gramps_media import media_handles, normalize_media
 from familienportal.gramps_relationships import relationship_summary
 from familienportal.gramps_web import _client, _state
 from familienportal.permissions import has_permission
@@ -32,15 +33,15 @@ def person_detail(handle: str, request: Request, db: Session = Depends(get_db)):
     people = client.people(pagesize=200)
     people_by_handle = {str(item.get("handle")): item for item in people if item.get("handle")}
     relations = relationship_summary(person, families, people_by_handle)
+    media = []
+    for media_handle in media_handles(person):
+        try:
+            media.append(normalize_media(client.media(media_handle)))
+        except Exception:
+            continue
 
     return templates.TemplateResponse(
         request=request,
         name="genealogy_person.html",
-        context={
-            "user": user,
-            "is_admin": user.is_superadmin,
-            "person": person,
-            "relations": relations,
-            "gramps_base_url": state.base_url.rstrip("/") if state.base_url else "",
-        },
+        context={"user": user, "is_admin": user.is_superadmin, "person": person, "relations": relations, "media": media, "gramps_base_url": state.base_url.rstrip("/") if state.base_url else ""},
     )
