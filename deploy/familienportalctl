@@ -1,231 +1,35 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
-
-APP_DIR=${FAMILIENPORTAL_APP_DIR:-/opt/familienportal}
-CONFIG_DIR=${FAMILIENPORTAL_CONFIG_DIR:-/etc/familienportal}
-DATA_DIR=${FAMILIENPORTAL_DATA_DIR:-/var/lib/familienportal}
-BACKUP_DIR=${FAMILIENPORTAL_BACKUP_DIR:-/var/backups/familienportal}
-SYSTEMD_DIR=/etc/systemd/system
-SERVICE=familienportal.service
-
-need_root() {
-  if [[ ${EUID} -ne 0 ]]; then
-    echo "Bitte als root ausführen." >&2
-    exit 1
-  fi
+APP_DIR=${FAMILIENPORTAL_APP_DIR:-/opt/familienportal}; CONFIG_DIR=${FAMILIENPORTAL_CONFIG_DIR:-/etc/familienportal}; DATA_DIR=${FAMILIENPORTAL_DATA_DIR:-/var/lib/familienportal}; BACKUP_DIR=${FAMILIENPORTAL_BACKUP_DIR:-/var/backups/familienportal}; SYSTEMD_DIR=/etc/systemd/system; SERVICE=familienportal.service
+need_root(){ [[ ${EUID} -eq 0 ]] || { echo "Bitte als root ausführen." >&2; exit 1; }; }; stamp(){ date -u +%Y%m%dT%H%M%SZ; }; env_file(){ echo "$CONFIG_DIR/familienportal.env"; }
+load_env(){ [[ ! -f "$(env_file)" ]] || { set -a; source "$(env_file)"; set +a; }; }
+version(){ [[ ! -x "$APP_DIR/.venv/bin/python" ]] || "$APP_DIR/.venv/bin/python" -c 'import familienportal; print(familienportal.__version__)' 2>/dev/null || true; }
+normalize_pg_url(){ local url=${1:-}; printf '%s' "${url/postgresql+psycopg:/postgresql:}"; }
+backup(){
+ need_root; local id target db_url; id=$(stamp); target="$BACKUP_DIR/$id"; install -d -m 0750 "$target"
+ [[ ! -d "$APP_DIR" ]] || tar --exclude='opt/familienportal/.venv' -C / -czf "$target/application.tar.gz" opt/familienportal
+ [[ ! -d "$CONFIG_DIR" ]] || tar -C / -czf "$target/config.tar.gz" etc/familienportal
+ [[ ! -d "$DATA_DIR" ]] || tar -C / -czf "$target/data.tar.gz" var/lib/familienportal
+ load_env; db_url=${FAMILIENPORTAL_DATABASE_URL:-}
+ if [[ "$db_url" == postgresql* ]]; then pg_dump --format=custom --file="$target/database.dump" "$(normalize_pg_url "$db_url")"; elif [[ "$db_url" == sqlite:* ]]; then local p=${db_url#sqlite:///}; [[ ! -f "$p" ]] || cp -a "$p" "$target/database.sqlite3"; fi
+ version > "$target/version.txt"; (cd "$target" && sha256sum ./* 2>/dev/null | grep -v checksums > checksums.sha256 || true); printf '%s\n' "$id" > "$BACKUP_DIR/latest"; chmod -R go-rwx "$target"; echo "$target"
 }
-
-stamp() { date -u +%Y%m%dT%H%M%SZ; }
-
-env_file() { echo "$CONFIG_DIR/familienportal.env"; }
-
-load_env() {
-  if [[ -f "$(env_file)" ]]; then
-    set -a
-    # shellcheck disable=SC1090
-    source "$(env_file)"
-    set +a
-  fi
+list_backups(){ [[ -d "$BACKUP_DIR" ]] || return 0; for d in "$BACKUP_DIR"/20*; do [[ -d "$d" ]] || continue; printf '%s\t%s\n' "$(basename "$d")" "$(cat "$d/version.txt" 2>/dev/null || echo unbekannt)"; done; }
+verify_backup(){ local t=${1:?Backup fehlt}; [[ -d "$t" ]] || t="$BACKUP_DIR/$t"; [[ -d "$t" ]] || return 2; [[ ! -f "$t/checksums.sha256" ]] || (cd "$t" && sha256sum -c checksums.sha256); }
+install_units(){ for u in "$APP_DIR"/deploy/systemd/*.service "$APP_DIR"/deploy/systemd/*.timer; do install -o root -g root -m 0644 "$u" "$SYSTEMD_DIR/$(basename "$u")"; done; install -m 0755 "$APP_DIR/deploy/familienportalctl" /usr/local/sbin/familienportalctl; install -m 0755 "$APP_DIR/deploy/familienportal-release" /usr/local/sbin/familienportal-release; systemctl daemon-reload; }
+rebuild_venv(){ rm -rf "$APP_DIR/.venv"; python3 -m venv "$APP_DIR/.venv"; "$APP_DIR/.venv/bin/python" -m pip install --upgrade pip; "$APP_DIR/.venv/bin/python" -m pip install "$APP_DIR"; chown -R familienportal:familienportal "$APP_DIR/.venv"; }
+healthcheck(){ local p=${FAMILIENPORTAL_BIND_PORT:-8000}; for _ in {1..20}; do curl --fail --silent "http://127.0.0.1:${p}/health" >/dev/null 2>&1 && curl --fail --silent "http://127.0.0.1:${p}/ready" >/dev/null 2>&1 && return 0; sleep 1; done; return 1; }
+restore(){
+ need_root; local t=${1:-}; [[ -n "$t" ]] || { [[ -f "$BACKUP_DIR/latest" ]] || { echo "Kein Backup." >&2; exit 2; }; t=$(cat "$BACKUP_DIR/latest"); }; [[ -d "$t" ]] || t="$BACKUP_DIR/$t"; verify_backup "$t" || { echo "Backup-Prüfung fehlgeschlagen." >&2; exit 2; }
+ systemctl stop "$SERVICE" 2>/dev/null || true; [[ ! -f "$t/application.tar.gz" ]] || { rm -rf "$APP_DIR"; tar -C / -xzf "$t/application.tar.gz"; }; [[ ! -f "$t/config.tar.gz" ]] || { rm -rf "$CONFIG_DIR"; tar -C / -xzf "$t/config.tar.gz"; }; [[ ! -f "$t/data.tar.gz" ]] || { rm -rf "$DATA_DIR"; tar -C / -xzf "$t/data.tar.gz"; }
+ rebuild_venv; install_units; load_env; local db=${FAMILIENPORTAL_DATABASE_URL:-}; if [[ -f "$t/database.dump" && "$db" == postgresql* ]]; then pg_restore --clean --if-exists --no-owner --dbname="$(normalize_pg_url "$db")" "$t/database.dump"; elif [[ -f "$t/database.sqlite3" && "$db" == sqlite:* ]]; then local p=${db#sqlite:///}; install -d -o familienportal -g familienportal "$(dirname "$p")"; cp -a "$t/database.sqlite3" "$p"; chown familienportal:familienportal "$p"; fi
+ systemctl restart "$SERVICE"; healthcheck || { echo "Wiederhergestellt, Dienst aber nicht gesund." >&2; exit 1; }; echo "Restore erfolgreich: $(version)"
 }
-
-version() {
-  if [[ -x "$APP_DIR/.venv/bin/python" ]]; then
-    "$APP_DIR/.venv/bin/python" -c 'import familienportal; print(familienportal.__version__)' 2>/dev/null || true
-  elif [[ -f "$APP_DIR/src/familienportal/__init__.py" ]]; then
-    sed -n 's/^__version__ = "\(.*\)"/\1/p' "$APP_DIR/src/familienportal/__init__.py"
-  fi
+update_from_dir(){
+ need_root; local source=${1:?Quelle fehlt}; [[ -f "$source/pyproject.toml" ]] || { echo "Ungültige Quelle." >&2; exit 2; }; local b; b=$(backup); echo "Backup: $b"; systemctl stop "$SERVICE" 2>/dev/null || true; local s; s=$(mktemp -d); cp -a "$source"/. "$s"/; rm -rf "$s/.git" "$s/.venv"; find "$APP_DIR" -mindepth 1 -maxdepth 1 ! -name '.venv' -exec rm -rf {} +; cp -a "$s"/. "$APP_DIR"/; rm -rf "$s"; chown -R familienportal:familienportal "$APP_DIR"; rebuild_venv; install_units
+ if ! "$APP_DIR/.venv/bin/alembic" -c "$APP_DIR/alembic.ini" upgrade head; then echo "Migration fehlgeschlagen; Rollback." >&2; restore "$b"; exit 1; fi
+ systemctl enable "$SERVICE" >/dev/null; systemctl restart "$SERVICE"; load_env; if ! healthcheck; then echo "Healthcheck fehlgeschlagen; Rollback." >&2; restore "$b"; exit 1; fi; echo "Update erfolgreich: $(version)"
 }
-
-normalize_pg_url() {
-  local url=${1:-}
-  url=${url/postgresql+psycopg:/postgresql:}
-  printf '%s' "$url"
-}
-
-backup() {
-  need_root
-  local id target db_url
-  id=$(stamp)
-  target="$BACKUP_DIR/$id"
-  install -d -m 0750 "$target"
-
-  if [[ -d "$APP_DIR" ]]; then
-    tar --exclude='opt/familienportal/.venv' -C / -czf "$target/application.tar.gz" opt/familienportal
-  fi
-  if [[ -d "$CONFIG_DIR" ]]; then
-    tar -C / -czf "$target/config.tar.gz" etc/familienportal
-  fi
-  if [[ -d "$DATA_DIR" ]]; then
-    tar -C / -czf "$target/data.tar.gz" var/lib/familienportal
-  fi
-
-  load_env
-  db_url=${FAMILIENPORTAL_DATABASE_URL:-}
-  if [[ "$db_url" == postgresql* ]]; then
-    db_url=$(normalize_pg_url "$db_url")
-    pg_dump --format=custom --file="$target/database.dump" "$db_url"
-  elif [[ "$db_url" == sqlite:* ]]; then
-    local sqlite_path=${db_url#sqlite:///}
-    if [[ -f "$sqlite_path" ]]; then
-      cp -a "$sqlite_path" "$target/database.sqlite3"
-    fi
-  fi
-
-  version > "$target/version.txt"
-  printf '%s\n' "$id" > "$BACKUP_DIR/latest"
-  chmod -R go-rwx "$target"
-  echo "$target"
-}
-
-install_units() {
-  local unit
-  for unit in \
-    familienportal.service \
-    familienportal-calendar-sync.service \
-    familienportal-calendar-sync.timer \
-    familienportal-reminder-queue.service \
-    familienportal-reminder-queue.timer \
-    familienportal-security-cleanup.service \
-    familienportal-security-cleanup.timer; do
-    install -o root -g root -m 0644 "$APP_DIR/deploy/systemd/$unit" "$SYSTEMD_DIR/$unit"
-  done
-  install -o root -g root -m 0755 "$APP_DIR/deploy/familienportalctl" /usr/local/sbin/familienportalctl
-  install -o root -g root -m 0755 "$APP_DIR/deploy/familienportal-release" /usr/local/sbin/familienportal-release
-  systemctl daemon-reload
-}
-
-rebuild_venv() {
-  rm -rf "$APP_DIR/.venv"
-  python3 -m venv "$APP_DIR/.venv"
-  "$APP_DIR/.venv/bin/python" -m pip install --upgrade pip
-  "$APP_DIR/.venv/bin/python" -m pip install "$APP_DIR"
-  chown -R familienportal:familienportal "$APP_DIR/.venv"
-}
-
-healthcheck() {
-  local port=${FAMILIENPORTAL_BIND_PORT:-8000}
-  local i
-  for i in {1..20}; do
-    if curl --fail --silent --show-error "http://127.0.0.1:${port}/health" >/dev/null 2>&1; then
-      return 0
-    fi
-    sleep 1
-  done
-  return 1
-}
-
-update_from_dir() {
-  need_root
-  local source=${1:?Quellverzeichnis fehlt}
-  [[ -f "$source/pyproject.toml" ]] || { echo "Ungültige Quelle: $source" >&2; exit 2; }
-  local backup_path
-  backup_path=$(backup)
-  echo "Backup: $backup_path"
-
-  systemctl stop "$SERVICE" 2>/dev/null || true
-  local staging
-  staging=$(mktemp -d)
-  cp -a "$source"/. "$staging"/
-  rm -rf "$staging/.git" "$staging/.venv"
-
-  find "$APP_DIR" -mindepth 1 -maxdepth 1 ! -name '.venv' -exec rm -rf {} +
-  cp -a "$staging"/. "$APP_DIR"/
-  rm -rf "$staging"
-  chown -R familienportal:familienportal "$APP_DIR"
-
-  rebuild_venv
-  install_units
-  "$APP_DIR/.venv/bin/alembic" -c "$APP_DIR/alembic.ini" upgrade head
-  systemctl enable "$SERVICE" >/dev/null
-  systemctl restart "$SERVICE"
-
-  load_env
-  if ! healthcheck; then
-    echo "Healthcheck fehlgeschlagen. Automatisches Rollback wird ausgeführt." >&2
-    rollback "$backup_path"
-    exit 1
-  fi
-  echo "Update erfolgreich: $(version)"
-}
-
-rollback() {
-  need_root
-  local target=${1:-}
-  if [[ -z "$target" ]]; then
-    [[ -f "$BACKUP_DIR/latest" ]] || { echo "Kein Backup vorhanden." >&2; exit 2; }
-    target="$BACKUP_DIR/$(cat "$BACKUP_DIR/latest")"
-  elif [[ ! -d "$target" && -d "$BACKUP_DIR/$target" ]]; then
-    target="$BACKUP_DIR/$target"
-  fi
-  [[ -d "$target" ]] || { echo "Backup nicht gefunden: $target" >&2; exit 2; }
-
-  systemctl stop "$SERVICE" 2>/dev/null || true
-  rm -rf "$APP_DIR"
-  tar -C / -xzf "$target/application.tar.gz"
-  if [[ -f "$target/config.tar.gz" ]]; then
-    rm -rf "$CONFIG_DIR"
-    tar -C / -xzf "$target/config.tar.gz"
-  fi
-  if [[ -f "$target/data.tar.gz" ]]; then
-    rm -rf "$DATA_DIR"
-    tar -C / -xzf "$target/data.tar.gz"
-  fi
-
-  rebuild_venv
-  install_units
-  load_env
-  local db_url=${FAMILIENPORTAL_DATABASE_URL:-}
-  if [[ -f "$target/database.dump" && "$db_url" == postgresql* ]]; then
-    db_url=$(normalize_pg_url "$db_url")
-    pg_restore --clean --if-exists --no-owner --dbname="$db_url" "$target/database.dump"
-  elif [[ -f "$target/database.sqlite3" && "$db_url" == sqlite:* ]]; then
-    local sqlite_path=${db_url#sqlite:///}
-    install -d -o familienportal -g familienportal "$(dirname "$sqlite_path")"
-    cp -a "$target/database.sqlite3" "$sqlite_path"
-    chown familienportal:familienportal "$sqlite_path"
-  fi
-
-  systemctl restart "$SERVICE"
-  load_env
-  healthcheck || { echo "Rollback wiederhergestellt, Dienst aber nicht gesund." >&2; exit 1; }
-  echo "Rollback erfolgreich: $(version)"
-}
-
-remove_app() {
-  need_root
-  local purge=${1:-}
-  systemctl disable --now familienportal.service 2>/dev/null || true
-  systemctl disable --now familienportal-calendar-sync.timer 2>/dev/null || true
-  systemctl disable --now familienportal-reminder-queue.timer 2>/dev/null || true
-  systemctl disable --now familienportal-security-cleanup.timer 2>/dev/null || true
-  rm -f "$SYSTEMD_DIR"/familienportal*.service "$SYSTEMD_DIR"/familienportal*.timer
-  rm -f /usr/local/sbin/familienportalctl /usr/local/sbin/familienportal-release
-  systemctl daemon-reload
-  rm -rf "$APP_DIR"
-  if [[ "$purge" == "--purge" ]]; then
-    rm -rf "$CONFIG_DIR" "$DATA_DIR" "$BACKUP_DIR"
-    userdel familienportal 2>/dev/null || true
-    echo "Familienportal vollständig entfernt."
-  else
-    echo "Anwendung entfernt. Konfiguration, Daten und Backups bleiben erhalten."
-  fi
-}
-
-status() {
-  echo "Version: ${1:-$(version)}"
-  echo "Anwendung: $APP_DIR"
-  echo "Konfiguration: $CONFIG_DIR"
-  echo "Daten: $DATA_DIR"
-  echo "Backups: $BACKUP_DIR"
-  systemctl --no-pager --full status "$SERVICE" || true
-}
-
-case ${1:-status} in
-  backup) backup ;;
-  update) update_from_dir "${2:-.}" ;;
-  rollback) rollback "${2:-}" ;;
-  remove) remove_app "${2:-}" ;;
-  status) status ;;
-  version) version ;;
-  *) echo "Verwendung: $0 {status|version|backup|update <source>|rollback [backup]|remove [--purge]}" >&2; exit 2 ;;
-esac
+remove_app(){ need_root; local purge=${1:-}; systemctl disable --now "$SERVICE" 2>/dev/null || true; for t in familienportal-calendar-sync.timer familienportal-gramps-calendar-sync.timer familienportal-reminder-queue.timer familienportal-security-cleanup.timer; do systemctl disable --now "$t" 2>/dev/null || true; done; rm -f "$SYSTEMD_DIR"/familienportal*.service "$SYSTEMD_DIR"/familienportal*.timer /usr/local/sbin/familienportalctl /usr/local/sbin/familienportal-release; systemctl daemon-reload; rm -rf "$APP_DIR"; [[ "$purge" != --purge ]] || { rm -rf "$CONFIG_DIR" "$DATA_DIR" "$BACKUP_DIR"; userdel familienportal 2>/dev/null || true; }; }
+status(){ echo "Version: $(version)"; echo "Anwendung: $APP_DIR"; echo "Konfiguration: $CONFIG_DIR"; echo "Daten: $DATA_DIR"; echo "Backups: $BACKUP_DIR"; systemctl --no-pager --full status "$SERVICE" || true; }
+case ${1:-status} in backup) backup;; backups) list_backups;; verify-backup) verify_backup "${2:-}";; restore|rollback) restore "${2:-}";; update) update_from_dir "${2:-.}";; remove) remove_app "${2:-}";; status) status;; version) version;; *) echo "Verwendung: $0 {status|version|backup|backups|verify-backup <id>|restore [id]|update <source>|remove [--purge]}" >&2; exit 2;; esac
