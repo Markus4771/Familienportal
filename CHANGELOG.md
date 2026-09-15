@@ -2,6 +2,41 @@
 
 Alle wesentlichen Änderungen am Familienportal werden in dieser Datei dokumentiert.
 
+## 0.10.0 – 2026-09-15
+
+### Familienaufgaben
+- Neues Aufgabenmodul für Familien und Haushalte mit Zuweisung, Priorität, Fälligkeit und privaten Aufgaben.
+- Ansichten für eigene, Familien-, überfällige, erledigte und archivierte Aufgaben.
+- Wiederkehrende Aufgaben täglich, wöchentlich, monatlich und jährlich mit korrekter Behandlung von Monatsenden und Schaltjahren.
+- Dashboard-Integration für offene, heutige, kommende und überfällige Aufgaben sowie Schnell-Erledigen.
+- Kalenderintegration mit stabilem Aufgaben-UID und standardmäßig 60 Minuten Erinnerung.
+- Erledigte, abgebrochene und archivierte Aufgaben deaktivieren den Kalendertermin; Wiederöffnen oder Wiederherstellen aktiviert ihn wieder.
+
+### Rechte, Datenschutz und Administration
+- Aufgabenrechte für Administrator, Erwachsene, Kind und Gast.
+- Bestehende Systemrollen erhalten fehlende Aufgabenrechte über Migration 0016, ohne benutzerdefinierte Rechte zu überschreiben.
+- Zuweisungen sind serverseitig geschützt; Benutzer ohne Zuweisungsrecht können keine fremden Aufgaben übernehmen oder umverteilen.
+- Normales Entfernen erfolgt über Archivierung; endgültiges Löschen ist nur für Aufgabenverwaltung bzw. Superadmin möglich und setzt vorherige Archivierung voraus.
+- Sichtbarkeit privater Aufgaben und Dashboard-Auswertungen berücksichtigen Familien- und Aufgabenrechte.
+- Audit-Einträge vermeiden vertrauliche Titel und Beschreibungen privater Aufgaben.
+
+### Datenintegrität und Qualität
+- Aufgabenänderung, Kalender-Synchronisation und Audit-Logging werden atomar in einer Datenbanktransaktion verarbeitet.
+- Integrationstests decken Erstellen, Erledigen, Wiederöffnen, Archivieren, Wiederherstellen und wiederkehrende Aufgaben mit Kalenderereignissen ab.
+- Web-Regressionstests schützen Setup, Login/Logout, Dashboard, Administration, System-API und Aufgaben-Routen.
+- CI prüft zusätzlich Python-Syntax, Importintegrität und die Alembic-Migrationskette einschließlich Upgrade/Downgrade und Upgrade auf Head.
+- Historische doppelte Alembic-Revision 0009 wurde durch eine kompatible Reconciliation-Migration bereinigt.
+
+### Migrationen
+- 0014: Familienaufgaben.
+- 0015: Aufgabenarchivierung.
+- 0016: Aufgabenrechte für bestehende Systemrollen.
+
+### Bekannte Betriebsanforderungen
+- Externe Connectoren müssen weiterhin mit den tatsächlich eingesetzten Nextcloud-, Mailcow-, Gramps-Web- und Paperless-ngx-Versionen getestet werden.
+- Die CI prüft Softwarelogik und Migrationen, ersetzt aber keinen Live-Integrationstest der externen Systeme.
+- Native Debian-`.deb`-Paketierung bleibt ein eigener offener Plattformpunkt.
+
 ## 0.9.0 – 2026-09-15
 
 ### Integration & Administration
