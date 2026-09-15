@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import select
@@ -10,7 +10,8 @@ from sqlalchemy.orm import Session
 
 from familienportal.api import audit
 from familienportal.database import get_db
-from familienportal.integration_admin import integration_overview, integration_summary
+from familienportal.integration_admin import definitions, integration_overview, integration_summary
+from familienportal.integration_diagnostics import diagnose_endpoint
 from familienportal.platform_models import ConnectorState
 from familienportal.platform_web import _admin, _probe_url
 
@@ -22,16 +23,18 @@ templates = Jinja2Templates(directory="src/familienportal/templates")
 def integrations_page(request: Request, db: Session = Depends(get_db)):
     admin = _admin(request, db)
     rows = integration_overview(db, admin.family_id)
-    return templates.TemplateResponse(
-        request=request,
-        name="integrations_admin.html",
-        context={
-            "user": admin,
-            "is_admin": True,
-            "integrations": rows,
-            "summary": integration_summary(rows),
-        },
-    )
+    return templates.TemplateResponse(request=request, name="integrations_admin.html", context={"user": admin, "is_admin": True, "integrations": rows, "summary": integration_summary(rows)})
+
+
+@router.get("/admin/integrations/{connector_key}/diagnostics", response_class=HTMLResponse)
+def integration_diagnostics(connector_key: str, request: Request, db: Session = Depends(get_db)):
+    admin = _admin(request, db)
+    definition = next((item for item in definitions() if item.key == connector_key), None)
+    if definition is None:
+        raise HTTPException(status_code=404, detail="Integration nicht gefunden")
+    state = db.scalar(select(ConnectorState).where(ConnectorState.family_id == admin.family_id, ConnectorState.connector_key == connector_key))
+    steps = diagnose_endpoint(state.base_url if state else None, enabled=bool(state and state.enabled))
+    return templates.TemplateResponse(request=request, name="integration_diagnostics.html", context={"user": admin, "is_admin": True, "integration": definition, "state": state, "steps": steps})
 
 
 @router.post("/admin/integrations/health")
@@ -51,13 +54,6 @@ def check_all_integrations(request: Request, db: Session = Depends(get_db)):
         state.health_status, state.health_message = _probe_url(state.base_url)
         state.health_checked_at = datetime.now(timezone.utc)
         checked += 1
-    audit(
-        db,
-        "integrations.health_checked",
-        actor=admin,
-        target_type="family",
-        target_id=str(admin.family_id),
-        details=f"checked={checked}",
-    )
+    audit(db, "integrations.health_checked", actor=admin, target_type="family", target_id=str(admin.family_id), details=f"checked={checked}")
     db.commit()
     return RedirectResponse("/admin/integrations?checked=1", status_code=303)
