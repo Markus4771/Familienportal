@@ -26,3 +26,19 @@ jobs:
           FAMILIENPORTAL_SESSION_SECRET_KEY: ci-session-secret
           FAMILIENPORTAL_SECURITY_ENCRYPTION_KEY: ci-security-encryption-key
         run: pytest
+      - name: Verify migrations 0013 to 0015
+        env:
+          FAMILIENPORTAL_DATABASE_URL: sqlite:///./ci-migrations.db
+          FAMILIENPORTAL_SESSION_SECRET_KEY: ci-session-secret
+          FAMILIENPORTAL_SECURITY_ENCRYPTION_KEY: ci-security-encryption-key
+        run: |
+          rm -f ci-migrations.db
+          alembic upgrade 0013
+          test "$(alembic current 2>/dev/null | awk 'NF {print $1}' | tail -1)" = "0013"
+          alembic upgrade 0014
+          test "$(alembic current 2>/dev/null | awk 'NF {print $1}' | tail -1)" = "0014"
+          alembic upgrade 0015
+          test "$(alembic current 2>/dev/null | awk 'NF {print $1}' | tail -1)" = "0015"
+          alembic downgrade 0013
+          test "$(alembic current 2>/dev/null | awk 'NF {print $1}' | tail -1)" = "0013"
+          alembic upgrade head
