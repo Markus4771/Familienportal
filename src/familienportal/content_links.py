@@ -43,10 +43,20 @@ class ContentLink(Base):
         return None
 
     def targets_are_valid(self) -> bool:
-        """Validate both the one-source/one-target shape and the matching link kind."""
+        """Validate source/target shape and, when supplied, require the matching kind.
+
+        Older callers construct transient ContentLink objects without ``kind`` to
+        validate only the one-source/one-target shape. Persisted/new links carry a
+        kind and are validated strictly against that shape.
+        """
         expected = self.expected_kind()
-        return expected is not None and self.kind == expected
+        if expected is None:
+            return False
+        kind = getattr(self, "kind", None)
+        return kind is None or kind == expected
 
     def kind_is_valid(self) -> bool:
-        """Explicit alias for callers that want to emphasize kind validation."""
-        return self.targets_are_valid()
+        """Require an explicit kind that matches the source/target shape."""
+        expected = self.expected_kind()
+        kind = getattr(self, "kind", None)
+        return expected is not None and kind is not None and kind == expected
