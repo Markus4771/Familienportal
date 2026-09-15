@@ -13,6 +13,7 @@ from familienportal.genealogy_privacy import can_view_living, privacy_policy
 from familienportal.gramps import GrampsError
 from familienportal.gramps_web import _client as gramps_client, _state as gramps_state
 from familienportal.nextcloud import NextcloudError
+from familienportal.nextcloud_family_scope import family_roots, path_in_roots
 from familienportal.nextcloud_web import _client as nextcloud_client, _state as nextcloud_state
 from familienportal.paperless import PaperlessError
 from familienportal.paperless_web import _client as paperless_client, _state as paperless_state
@@ -42,7 +43,7 @@ def _link(link_id: UUID, request: Request, db: Session) -> tuple[object, Genealo
         raise HTTPException(status_code=502, detail="Datenschutzstatus der Person konnte nicht geprüft werden") from exc
     _, age = privacy_policy(db, user.family_id)
     if not can_view_living(user, person, age):
-        raise HTTPException(status_code=403, detail="Dokumente lebender Personen sind geschützt")
+        raise HTTPException(status_code=404, detail="Dokumentverknüpfung nicht gefunden")
     return user, link
 
 
@@ -64,6 +65,19 @@ def _headers(filename: str | None = None) -> dict[str, str]:
     return headers
 
 
+def _nextcloud_file(db: Session, user, link: GenealogyDocumentLink):
+    state = nextcloud_state(db, user.family_id)
+    if not state or not state.enabled:
+        raise HTTPException(status_code=409, detail="Nextcloud ist nicht aktiviert")
+    client = nextcloud_client(state)
+    try:
+        roots = family_roots(db, user.family_id, client)
+        safe_path = path_in_roots(client, link.external_ref, roots)
+        return client.get_file(safe_path)
+    except NextcloudError as exc:
+        raise HTTPException(status_code=404, detail="Dokument nicht gefunden oder nicht freigegeben") from exc
+
+
 @router.get("/genealogy/documents/{link_id}/preview")
 def preview(link_id: UUID, request: Request, db: Session = Depends(get_db)):
     user, link = _link(link_id, request, db)
@@ -76,13 +90,7 @@ def preview(link_id: UUID, request: Request, db: Session = Depends(get_db)):
         except PaperlessError as exc:
             raise HTTPException(status_code=502, detail=str(exc)) from exc
         return Response(content=result.content, media_type=result.content_type, headers=_headers())
-    state = nextcloud_state(db, user.family_id)
-    if not state or not state.enabled:
-        raise HTTPException(status_code=409, detail="Nextcloud ist nicht aktiviert")
-    try:
-        result = nextcloud_client(state).get_file(link.external_ref)
-    except NextcloudError as exc:
-        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    result = _nextcloud_file(db, user, link)
     if not result.content_type.startswith("image/"):
         raise HTTPException(status_code=415, detail="Für diesen Nextcloud-Dateityp ist keine Bildvorschau verfügbar")
     return Response(content=result.content, media_type=result.content_type, headers=_headers())
@@ -100,11 +108,5 @@ def open_document(link_id: UUID, request: Request, db: Session = Depends(get_db)
         except PaperlessError as exc:
             raise HTTPException(status_code=502, detail=str(exc)) from exc
         return Response(content=result.content, media_type=result.content_type, headers=_headers(result.filename))
-    state = nextcloud_state(db, user.family_id)
-    if not state or not state.enabled:
-        raise HTTPException(status_code=409, detail="Nextcloud ist nicht aktiviert")
-    try:
-        result = nextcloud_client(state).get_file(link.external_ref)
-    except NextcloudError as exc:
-        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    result = _nextcloud_file(db, user, link)
     return Response(content=result.content, media_type=result.content_type, headers=_headers(result.filename))
