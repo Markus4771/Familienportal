@@ -9,6 +9,8 @@ from sqlalchemy.orm import Session
 
 from familienportal.database import get_db
 from familienportal.genealogy_document_models import GenealogyDocumentLink
+from familienportal.nextcloud import NextcloudError
+from familienportal.nextcloud_web import _client as nextcloud_client, _state as nextcloud_state
 from familienportal.paperless import PaperlessError
 from familienportal.paperless_web import _client as paperless_client, _state as paperless_state
 from familienportal.permissions import has_permission
@@ -26,8 +28,8 @@ def _link(link_id: UUID, request: Request, db: Session) -> tuple[object, Genealo
     link = db.scalar(select(GenealogyDocumentLink).where(GenealogyDocumentLink.id == link_id, GenealogyDocumentLink.family_id == user.family_id))
     if not link:
         raise HTTPException(status_code=404, detail="Dokumentverknüpfung nicht gefunden")
-    if link.provider != "paperless":
-        raise HTTPException(status_code=400, detail="Vorschau wird für diesen Provider noch nicht unterstützt")
+    if link.provider not in {"paperless", "nextcloud"}:
+        raise HTTPException(status_code=400, detail="Unbekannter Dokumentanbieter")
     return user, link
 
 
@@ -41,28 +43,55 @@ def _document_id(link: GenealogyDocumentLink) -> int:
     return value
 
 
+def _headers(filename: str | None = None) -> dict[str, str]:
+    headers = {"Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff"}
+    if filename:
+        safe_name = filename.replace('"', "").replace("\r", "").replace("\n", "")
+        headers["Content-Disposition"] = f'inline; filename="{safe_name}"'
+    return headers
+
+
 @router.get("/genealogy/documents/{link_id}/preview")
 def preview(link_id: UUID, request: Request, db: Session = Depends(get_db)):
     user, link = _link(link_id, request, db)
-    state = paperless_state(db, user.family_id)
+    if link.provider == "paperless":
+        state = paperless_state(db, user.family_id)
+        if not state or not state.enabled:
+            raise HTTPException(status_code=409, detail="Paperless-ngx ist nicht aktiviert")
+        try:
+            result = paperless_client(state).preview(_document_id(link))
+        except PaperlessError as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
+        return Response(content=result.content, media_type=result.content_type, headers=_headers())
+    state = nextcloud_state(db, user.family_id)
     if not state or not state.enabled:
-        raise HTTPException(status_code=409, detail="Paperless-ngx ist nicht aktiviert")
+        raise HTTPException(status_code=409, detail="Nextcloud ist nicht aktiviert")
     try:
-        result = paperless_client(state).preview(_document_id(link))
-    except PaperlessError as exc:
+        result = nextcloud_client(state).get_file(link.external_ref)
+    except NextcloudError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
-    return Response(content=result.content, media_type=result.content_type, headers={"Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff"})
+    if not result.content_type.startswith("image/"):
+        raise HTTPException(status_code=415, detail="Für diesen Nextcloud-Dateityp ist keine Bildvorschau verfügbar")
+    return Response(content=result.content, media_type=result.content_type, headers=_headers())
 
 
 @router.get("/genealogy/documents/{link_id}/open")
 def open_document(link_id: UUID, request: Request, db: Session = Depends(get_db)):
     user, link = _link(link_id, request, db)
-    state = paperless_state(db, user.family_id)
+    if link.provider == "paperless":
+        state = paperless_state(db, user.family_id)
+        if not state or not state.enabled:
+            raise HTTPException(status_code=409, detail="Paperless-ngx ist nicht aktiviert")
+        try:
+            result = paperless_client(state).download(_document_id(link))
+        except PaperlessError as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
+        return Response(content=result.content, media_type=result.content_type, headers=_headers(result.filename))
+    state = nextcloud_state(db, user.family_id)
     if not state or not state.enabled:
-        raise HTTPException(status_code=409, detail="Paperless-ngx ist nicht aktiviert")
+        raise HTTPException(status_code=409, detail="Nextcloud ist nicht aktiviert")
     try:
-        result = paperless_client(state).download(_document_id(link))
-    except PaperlessError as exc:
+        result = nextcloud_client(state).get_file(link.external_ref)
+    except NextcloudError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
-    disposition = f'inline; filename="{result.filename}"' if result.filename else "inline"
-    return Response(content=result.content, media_type=result.content_type, headers={"Content-Disposition": disposition, "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff"})
+    return Response(content=result.content, media_type=result.content_type, headers=_headers(result.filename))
