@@ -1,0 +1,9 @@
+#!/bin/sh
+set -e
+
+systemctl daemon-reload 2>/dev/null || true
+
+# /etc/familienportal, /var/lib/familienportal and /var/backups/familienportal
+# are deliberately retained on normal package removal. A future explicit purge
+# workflow may remove them only after backup/confirmation.
+exit 0
