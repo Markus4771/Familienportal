@@ -15,6 +15,7 @@ from familienportal import mailcow_models  # noqa: F401
 from familienportal import auth_models  # noqa: F401
 from familienportal import gramps_models  # noqa: F401
 from familienportal import genealogy_document_models  # noqa: F401
+from familienportal import task_models  # noqa: F401
 
 config = context.config
 config.set_main_option("sqlalchemy.url", get_settings().database_url)
