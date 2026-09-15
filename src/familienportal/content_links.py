@@ -31,14 +31,22 @@ class ContentLink(Base):
     created_by_user_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
-    def targets_are_valid(self) -> bool:
-        expected = None
+    def expected_kind(self) -> str | None:
         if self.note_id is not None and self.list_id is None and self.task_id is not None and self.event_id is None:
-            expected = ContentLinkKind.NOTE_TASK.value
-        elif self.note_id is not None and self.list_id is None and self.event_id is not None and self.task_id is None:
-            expected = ContentLinkKind.NOTE_EVENT.value
-        elif self.list_id is not None and self.note_id is None and self.task_id is not None and self.event_id is None:
-            expected = ContentLinkKind.LIST_TASK.value
-        elif self.list_id is not None and self.note_id is None and self.event_id is not None and self.task_id is None:
-            expected = ContentLinkKind.LIST_EVENT.value
+            return ContentLinkKind.NOTE_TASK.value
+        if self.note_id is not None and self.list_id is None and self.event_id is not None and self.task_id is None:
+            return ContentLinkKind.NOTE_EVENT.value
+        if self.list_id is not None and self.note_id is None and self.task_id is not None and self.event_id is None:
+            return ContentLinkKind.LIST_TASK.value
+        if self.list_id is not None and self.note_id is None and self.event_id is not None and self.task_id is None:
+            return ContentLinkKind.LIST_EVENT.value
+        return None
+
+    def targets_are_valid(self) -> bool:
+        """Validate the one-source/one-target shape; kept compatible with 0.11 callers."""
+        return self.expected_kind() is not None
+
+    def kind_is_valid(self) -> bool:
+        """Additionally validate that the persisted kind matches the source/target shape."""
+        expected = self.expected_kind()
         return expected is not None and self.kind == expected
