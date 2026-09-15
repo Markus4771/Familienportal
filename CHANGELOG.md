@@ -2,6 +2,43 @@
 
 Alle wesentlichen Änderungen am Familienportal werden in dieser Datei dokumentiert.
 
+## 0.11.0 – 2026-09-15
+
+### Familienalltag II – Notizen und Listen
+- Neues Notizsystem für Familien und Haushalte mit privaten Notizen, Eigentümermodell und Archivierung.
+- Universelles Listensystem für allgemeine Listen, Einkaufslisten, Packlisten und Wunschlisten.
+- Listeneinträge unterstützen Menge, Einheit, Kategorie, Verantwortliche, Fälligkeit, Erledigt-Status und Sortierposition.
+- Mobile Web-Oberflächen unter `/notes` und `/lists` zum Anlegen und Bearbeiten von Notizen, Listen und Listeneinträgen.
+- Listeneinträge können direkt als erledigt oder offen umgeschaltet werden.
+
+### Verknüpfungen und Dashboard
+- Notizen und Listen können technisch mit Aufgaben und Kalenderereignissen verknüpft werden.
+- Datenbank-Constraints verhindern Links mit mehreren Quellen oder mehreren Zielen.
+- Dashboard-Service liefert sichtbare Notizen, Listen, offene Listeneinträge und zuletzt bearbeitete Notizen.
+- System-Capabilities melden `notes` und `lists` als verfügbare Module.
+
+### Rechte, Datenschutz und Audit
+- Familiengrenzen und Eigentümerrechte werden serverseitig für Notizen und Listen geprüft.
+- Private Notizen und Listen sind standardmäßig nur für Eigentümer sowie ausdrücklich berechtigte Benutzer sichtbar.
+- Neue Rechte für Lesen, Erstellen, Bearbeiten, Archivieren, Löschen, Teilen, Zuweisen und Verwalten.
+- Bestehende Systemrollen erhalten Notizrechte über Migration 0018, ohne benutzerdefinierte Rollen zu verändern.
+- Audit-Einträge für Notizen enthalten weder Titel noch Inhalt; vertraulicher Freitext wird nicht in Audit-Metadaten übernommen.
+- Audit-Unterstützung für Listen und Listeneinträge ergänzt.
+
+### Datenbank und Qualität
+- Migration 0017: Familiennotizen.
+- Migration 0018: Notizrechte für bestehende Systemrollen.
+- Migration 0019: Universelle Familienlisten und Listeneinträge.
+- Migration 0020: Verknüpfungen zwischen Notizen/Listen und Aufgaben/Kalenderereignissen.
+- CI prüft die vollständige Migrationskette 0013 bis 0020 einschließlich Downgrade auf 0016 und anschließendem Upgrade auf Head.
+- Zusätzliche Tests für Familiengrenzen, private Inhalte, Listenmodelle, Content-Links, Audit-Datenschutz und Web-Routen.
+- Runtime-/Proxy- und Readiness-Kompatibilität aus 0.10.0 bleibt erhalten.
+
+### Bekannte Betriebsanforderungen
+- Die Web-Oberflächen sind die erste produktive Ausbaustufe; weiterführende Freigabe-, Sortier- und Komfortfunktionen können in 0.11.x ergänzt werden.
+- Externe Connectoren müssen weiterhin mit den tatsächlich eingesetzten Nextcloud-, Mailcow-, Gramps-Web- und Paperless-ngx-Versionen getestet werden.
+- Native Debian-`.deb`-Paketierung bleibt ein eigener offener Plattformpunkt.
+
 ## 0.10.0 – 2026-09-15
 
 ### Familienaufgaben
