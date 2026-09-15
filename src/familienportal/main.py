@@ -1,14 +1,13 @@
 from pathlib import Path
-
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
-
 from familienportal import __version__
 from familienportal.admin_security_071 import router as admin_security_router
+from familienportal.admin_status_web import router as admin_status_router
 from familienportal.api import router as api_router
 from familienportal.api_login_rate import router as api_login_rate_router
 from familienportal.calendar_caldav_web import router as calendar_caldav_router
@@ -40,77 +39,21 @@ from familienportal.tasks_web import router as tasks_router
 from familienportal.totp_qr_web import router as totp_qr_router
 from familienportal.webauthn_web import router as webauthn_router
 from familienportal.web import router as web_router
-
-settings = get_settings()
-package_dir = Path(__file__).resolve().parent
-
-app = FastAPI(title=settings.app_name, version=__version__, debug=settings.debug)
-app.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.trusted_hosts)
-app.add_middleware(SessionGuardMiddleware)
-app.add_middleware(SessionMiddleware, secret_key=settings.session_secret_key, https_only=settings.secure_cookies, same_site="lax", max_age=settings.session_max_age_seconds)
-app.mount("/static", StaticFiles(directory=package_dir / "static"), name="static")
-
-app.include_router(setup_router)
-# 0.7.1 policies are intentionally registered before legacy routes with the same paths.
-app.include_router(login_rate_router)
-app.include_router(mfa_rate_router)
-app.include_router(api_login_rate_router)
-app.include_router(webauthn_router)
-app.include_router(passkey_page_router)
-app.include_router(totp_qr_router)
-app.include_router(admin_security_router)
-app.include_router(web_router)
-app.include_router(tasks_router)
-app.include_router(content_router)
-app.include_router(login_mfa_router)
-app.include_router(security_router)
-app.include_router(platform_router)
-app.include_router(nextcloud_router)
-app.include_router(nextcloud_management_router)
-app.include_router(mailcow_router)
-app.include_router(mailcow_management_router)
-app.include_router(mailcow_mapping_router)
-app.include_router(mailcow_mailbox_router)
-app.include_router(mailcow_alias_router)
-app.include_router(calendar_router)
-app.include_router(calendar_ui_router)
-app.include_router(calendar_conflicts_router)
-app.include_router(calendar_caldav_router)
-app.include_router(calendar_import_router)
-app.include_router(calendar_sync_api_router)
-app.include_router(module_router)
-app.include_router(api_router)
-
-@app.get("/health", tags=["system"])
-async def health() -> dict[str, str]:
-    return {"status": "ok", "application": settings.app_name, "version": __version__, "environment": settings.environment, "profile": settings.default_profile}
-
-@app.get("/ready", tags=["system"])
-def readiness() -> dict[str, str]:
-    try:
-        with engine.connect() as connection:
-            connection.execute(text("SELECT 1"))
-    except SQLAlchemyError as exc:
-        return {"status": "not_ready", "database": exc.__class__.__name__}
-    return {"status": "ready", "database": "ok"}
-
-@app.get("/api/v1/system/runtime", tags=["system"])
-async def runtime(request: Request) -> dict[str, object]:
-    return {"public_url": settings.public_url, "request_scheme": request.url.scheme, "request_host": request.url.hostname, "client": request.client.host if request.client else None, "secure_cookies": settings.secure_cookies, "trusted_hosts": settings.trusted_hosts, "database_backend": settings.database_backend}
-
-@app.get("/api/v1/system/capabilities", tags=["system"])
-async def capabilities() -> dict[str, object]:
-    return {
-        "profiles": ["small_family", "extended_family"], "extension_types": ["module", "connector"],
-        "core": ["families", "households", "users", "roles", "sessions", "audit", "platform_management", "first_run_setup"],
-        "connectors": ["nextcloud", "mailcow", "gramps", "homeassistant", "paperless", "immich"],
-        "nextcloud": ["health", "users", "user_mapping", "groups", "group_mapping", "shares", "family_folders", "webdav", "caldav", "carddav", "diagnostics"],
-        "mailcow": ["health", "domains", "mailboxes", "mailbox_create", "mailbox_update", "mailbox_password_reset", "aliases", "alias_create", "alias_update", "alias_delete", "distribution_lists", "user_mapping", "user_unmapping", "quota_summary", "sogo_link"],
-        "calendar": ["personal", "family", "birthdays", "events", "recurrence", "reminders", "ics_import", "ics_export", "month_view", "week_view", "day_view", "calendar_colors", "filters", "event_edit", "event_move", "caldav_bindings", "caldav_pull", "caldav_push", "caldav_delete", "caldav_conflicts", "conflict_resolution", "sync_tokens", "etags", "automatic_sync", "reminder_queue"],
-        "security": ["totp", "totp_qr", "recovery_codes", "password_reset_email", "revocable_sessions", "session_listing", "admin_mfa_policy", "admin_mfa_emergency_reset", "passkeys", "webauthn_registration", "webauthn_login", "login_rate_limit"],
-        "modules": ["calendar", "tasks", "notes", "lists", "news", "marketplace", "support", "genealogy", "documents"],
-    }
-
+settings=get_settings(); package_dir=Path(__file__).resolve().parent
+app=FastAPI(title=settings.app_name,version=__version__,debug=settings.debug)
+app.add_middleware(TrustedHostMiddleware,allowed_hosts=settings.trusted_hosts); app.add_middleware(SessionGuardMiddleware); app.add_middleware(SessionMiddleware,secret_key=settings.session_secret_key,https_only=settings.secure_cookies,same_site="lax",max_age=settings.session_max_age_seconds); app.mount("/static",StaticFiles(directory=package_dir/"static"),name="static")
+for r in [setup_router,login_rate_router,mfa_rate_router,api_login_rate_router,webauthn_router,passkey_page_router,totp_qr_router,admin_security_router,web_router,tasks_router,content_router,login_mfa_router,security_router,platform_router,admin_status_router,nextcloud_router,nextcloud_management_router,mailcow_router,mailcow_management_router,mailcow_mapping_router,mailcow_mailbox_router,mailcow_alias_router,calendar_router,calendar_ui_router,calendar_conflicts_router,calendar_caldav_router,calendar_import_router,calendar_sync_api_router,module_router,api_router]: app.include_router(r)
+@app.get("/health",tags=["system"])
+async def health(): return {"status":"ok","application":settings.app_name,"version":__version__,"environment":settings.environment,"profile":settings.default_profile}
+@app.get("/ready",tags=["system"])
+def readiness():
+ try:
+  with engine.connect() as c: c.execute(text("SELECT 1"))
+ except SQLAlchemyError as exc: return {"status":"not_ready","database":exc.__class__.__name__}
+ return {"status":"ready","database":"ok"}
+@app.get("/api/v1/system/runtime",tags=["system"])
+async def runtime(request:Request): return {"public_url":settings.public_url,"request_scheme":request.url.scheme,"request_host":request.url.hostname,"client":request.client.host if request.client else None,"secure_cookies":settings.secure_cookies,"trusted_hosts":settings.trusted_hosts,"database_backend":settings.database_backend}
+@app.get("/api/v1/system/capabilities",tags=["system"])
+async def capabilities(): return {"profiles":["small_family","extended_family"],"extension_types":["module","connector"],"core":["families","households","users","roles","sessions","audit","platform_management","first_run_setup","system_diagnostics"],"connectors":["nextcloud","mailcow","gramps","homeassistant","paperless","immich"],"modules":["calendar","tasks","notes","lists","news","marketplace","support","genealogy","documents"]}
 @app.exception_handler(404)
-async def not_found(request: Request, exc: Exception):
-    return {"detail": "Not found"}
+async def not_found(request:Request,exc:Exception): return {"detail":"Not found"}
