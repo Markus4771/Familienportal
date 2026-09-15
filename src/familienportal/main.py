@@ -91,23 +91,36 @@ def readiness() -> dict[str, str]:
     try:
         with engine.connect() as connection:
             connection.execute(text("SELECT 1"))
-    except SQLAlchemyError:
-        return {"status": "not-ready"}
-    return {"status": "ready"}
+    except SQLAlchemyError as exc:
+        return {"status": "not_ready", "database": exc.__class__.__name__}
+    return {"status": "ready", "database": "ok"}
 
 
 @app.get("/api/v1/system/runtime", tags=["system"])
-def runtime() -> dict[str, object]:
-    return {"version": __version__, "environment": settings.environment, "debug": settings.debug, "profile": settings.default_profile}
+async def runtime(request: Request) -> dict[str, object]:
+    return {
+        "public_url": settings.public_url,
+        "request_scheme": request.url.scheme,
+        "request_host": request.url.hostname,
+        "client": request.client.host if request.client else None,
+        "secure_cookies": settings.secure_cookies,
+        "trusted_hosts": settings.trusted_hosts,
+        "database_backend": settings.database_backend,
+    }
 
 
 @app.get("/api/v1/system/capabilities", tags=["system"])
-def capabilities() -> dict[str, object]:
+async def capabilities() -> dict[str, object]:
     return {
-        "application": settings.app_name,
-        "version": __version__,
-        "modules": ["calendar", "tasks", "notes", "lists", "news", "documents", "chat", "marketplace", "integrations"],
-        "connectors": ["nextcloud", "mailcow", "home-assistant", "matrix", "mqtt", "immich", "jellyfin", "paperless-ngx", "gramps-web"],
+        "profiles": ["small_family", "extended_family"],
+        "extension_types": ["module", "connector"],
+        "core": ["families", "households", "users", "roles", "sessions", "audit", "platform_management"],
+        "connectors": ["nextcloud", "mailcow", "gramps", "homeassistant", "paperless", "immich"],
+        "nextcloud": ["health", "users", "user_mapping", "groups", "group_mapping", "shares", "family_folders", "webdav", "caldav", "carddav", "diagnostics"],
+        "mailcow": ["health", "domains", "mailboxes", "mailbox_create", "mailbox_update", "mailbox_password_reset", "aliases", "alias_create", "alias_update", "alias_delete", "distribution_lists", "user_mapping", "user_unmapping", "quota_summary", "sogo_link"],
+        "calendar": ["personal", "family", "birthdays", "events", "recurrence", "reminders", "ics_import", "ics_export", "month_view", "week_view", "day_view", "calendar_colors", "filters", "event_edit", "event_move", "caldav_bindings", "caldav_pull", "caldav_push", "caldav_delete", "caldav_conflicts", "conflict_resolution", "sync_tokens", "etags", "automatic_sync", "reminder_queue"],
+        "security": ["totp", "totp_qr", "recovery_codes", "password_reset_email", "revocable_sessions", "session_listing", "admin_mfa_policy", "admin_mfa_emergency_reset", "passkeys", "webauthn_registration", "webauthn_login", "login_rate_limit"],
+        "modules": ["calendar", "tasks", "notes", "lists", "news", "marketplace", "support", "genealogy", "documents"],
     }
 
 
