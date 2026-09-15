@@ -2,7 +2,13 @@ from uuid import uuid4
 
 from familienportal.models import Role, User
 from familienportal.task_models import FamilyTask
-from familienportal.task_permissions import can_complete_task, can_delete_task, can_edit_task, can_read_task
+from familienportal.task_permissions import (
+    can_complete_task,
+    can_delete_task,
+    can_edit_task,
+    can_read_task,
+    can_set_assignee,
+)
 
 
 def user(*permissions: str, family_id=None, superadmin=False):
@@ -76,3 +82,42 @@ def test_owner_needs_delete_permission_to_delete():
     assert not can_delete_task(owner, item)
     owner.roles[0].permissions = "tasks.delete"
     assert can_delete_task(owner, item)
+
+
+def test_user_without_assign_permission_can_assign_task_to_self_or_nobody():
+    actor = user("tasks.create")
+    assert can_set_assignee(actor, actor.id)
+    assert can_set_assignee(actor, None)
+
+
+def test_user_without_assign_permission_cannot_assign_task_to_another_user():
+    family_id = uuid4()
+    actor = user("tasks.create", family_id=family_id)
+    other = user(family_id=family_id)
+    assert not can_set_assignee(actor, other.id)
+
+
+def test_assign_permission_allows_assignment_to_another_user():
+    family_id = uuid4()
+    actor = user("tasks.assign", family_id=family_id)
+    other = user(family_id=family_id)
+    assert can_set_assignee(actor, other.id)
+
+
+def test_editor_without_assign_permission_cannot_change_other_assignee():
+    family_id = uuid4()
+    actor = user("tasks.edit", family_id=family_id)
+    current = user(family_id=family_id)
+    other = user(family_id=family_id)
+    item = task_for(actor, assignee=current)
+    assert can_set_assignee(actor, current.id, item)
+    assert not can_set_assignee(actor, actor.id, item)
+    assert not can_set_assignee(actor, other.id, item)
+    assert not can_set_assignee(actor, None, item)
+
+
+def test_assignment_check_rejects_cross_family_task():
+    actor = user("tasks.assign")
+    outsider = user()
+    item = task_for(outsider)
+    assert not can_set_assignee(actor, actor.id, item)
