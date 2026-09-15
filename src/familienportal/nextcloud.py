@@ -5,7 +5,7 @@ import json
 from dataclasses import dataclass
 from typing import Any
 from urllib.error import HTTPError, URLError
-from urllib.parse import quote, urlencode
+from urllib.parse import quote, unquote, urlencode
 from urllib.request import Request, urlopen
 from xml.etree import ElementTree
 
@@ -38,7 +38,7 @@ class NextcloudClient:
 
     def _headers(self, *, ocs: bool = False, content_type: str | None = None) -> dict[str, str]:
         token = base64.b64encode(f"{self.username}:{self.password}".encode()).decode()
-        headers = {"Authorization": f"Basic {token}", "User-Agent": "Familienportal/0.8.5"}
+        headers = {"Authorization": f"Basic {token}", "User-Agent": "Familienportal/0.9.0"}
         if ocs:
             headers["OCS-APIRequest"] = "true"
             headers["Accept"] = "application/json"
@@ -108,16 +108,26 @@ class NextcloudClient:
         return {"webdav": f"{self.base_url}/remote.php/dav/files/{user}/", "caldav": f"{self.base_url}/remote.php/dav/calendars/{user}/", "carddav": f"{self.base_url}/remote.php/dav/addressbooks/users/{user}/"}
 
     def _safe_relative_path(self, relative_path: str) -> str:
-        path = relative_path.strip("/")
-        if not path or any(part in {".", ".."} for part in path.split("/")):
+        raw = str(relative_path).strip()
+        if not raw or raw.startswith(("/", "\\")) or "\x00" in raw or "\\" in raw:
             raise NextcloudError("Ungültiger Dateipfad.")
-        return path
+        decoded = raw
+        for _ in range(3):
+            value = unquote(decoded)
+            if value == decoded:
+                break
+            decoded = value
+        parts = decoded.split("/")
+        if not decoded or any(part in {"", ".", ".."} for part in parts):
+            raise NextcloudError("Ungültiger Dateipfad.")
+        return "/".join(parts)
 
     def _dav_path(self, relative_path: str = "") -> str:
         user = quote(self.username, safe="")
-        path = relative_path.strip("/")
-        suffix = f"/{quote(path, safe='/')}" if path else ""
-        return f"/remote.php/dav/files/{user}{suffix}/"
+        if not relative_path:
+            return f"/remote.php/dav/files/{user}/"
+        path = self._safe_relative_path(relative_path)
+        return f"/remote.php/dav/files/{user}/{quote(path, safe='/')}/"
 
     def _dav_file_path(self, relative_path: str) -> str:
         user = quote(self.username, safe="")
