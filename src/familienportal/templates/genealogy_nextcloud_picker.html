@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Nextcloud auswählen{% endblock %}
+{% block content %}
+<h1 class="h3">Nextcloud-Datei auswählen</h1>
+<p class="text-secondary">Ordner: /{{ path }}</p>
+{% if path %}<a class="btn btn-sm btn-outline-secondary mb-3" href="/genealogy/person/{{ handle }}/picker/nextcloud?path={{ parent }}">Eine Ebene höher</a>{% endif %}
+<div class="list-group">
+{% for item in items %}
+  {% if item.is_dir %}<a class="list-group-item list-group-item-action" href="/genealogy/person/{{ handle }}/picker/nextcloud?path={{ item.relative }}">Ordner: {{ item.name }}</a>
+  {% else %}<div class="list-group-item"><div class="d-flex justify-content-between align-items-center"><div><strong>{{ item.name }}</strong><div class="small text-secondary">{{ item.content_type or '' }} · {{ item.size or '' }}</div></div><form method="post" action="/genealogy/person/{{ handle }}/documents"><input type="hidden" name="provider" value="nextcloud"><input type="hidden" name="external_ref" value="{{ item.relative }}"><input type="hidden" name="title" value="{{ item.name }}"><input type="hidden" name="category" value=""><button class="btn btn-primary btn-sm">Auswählen</button></form></div></div>{% endif %}
+{% else %}<div class="text-secondary">Keine Dateien gefunden.</div>{% endfor %}
+</div>
+<p class="mt-4"><a href="/genealogy/person/{{ handle }}">Abbrechen</a></p>
+{% endblock %}
