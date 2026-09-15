@@ -1,3 +1,4 @@
+from familienportal.content_web import router as content_router
 from familienportal.main import app
 from familienportal.tasks_web import router as tasks_router
 from familienportal.web import router as web_router
@@ -41,6 +42,20 @@ def test_task_web_routes_remain_registered():
         ("/tasks/{task_id}/delete", "POST"),
     }
     assert expected <= routes
+
+
+def test_content_web_routes_are_registered():
+    routes = _routes(content_router.routes)
+    assert {
+        ("/notes", "GET"),
+        ("/notes", "POST"),
+        ("/notes/{note_id}/edit", "POST"),
+        ("/notes/{note_id}/archive", "POST"),
+        ("/lists", "GET"),
+        ("/lists", "POST"),
+        ("/lists/{list_id}/items", "POST"),
+        ("/lists/{list_id}/items/{item_id}/toggle", "POST"),
+    } <= routes
 
 
 def test_system_routes_remain_registered_on_main_application():
