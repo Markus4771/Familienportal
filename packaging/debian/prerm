@@ -1,0 +1,10 @@
+#!/bin/sh
+set -e
+
+if [ "$1" = "remove" ] || [ "$1" = "deconfigure" ]; then
+    systemctl stop familienportal.service 2>/dev/null || true
+    for timer in familienportal-calendar-sync.timer familienportal-gramps-calendar-sync.timer familienportal-reminder-queue.timer familienportal-security-cleanup.timer; do
+        systemctl stop "$timer" 2>/dev/null || true
+    done
+fi
+exit 0
