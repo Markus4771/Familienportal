@@ -34,6 +34,7 @@ from familienportal.passkey_page import router as passkey_page_router
 from familienportal.platform_web import router as platform_router
 from familienportal.security_web import router as security_router
 from familienportal.session_guard import SessionGuardMiddleware
+from familienportal.tasks_web import router as tasks_router
 from familienportal.totp_qr_web import router as totp_qr_router
 from familienportal.webauthn_web import router as webauthn_router
 from familienportal.web import router as web_router
@@ -57,6 +58,7 @@ app.include_router(totp_qr_router)
 app.include_router(admin_security_router)
 
 app.include_router(web_router)
+app.include_router(tasks_router)
 app.include_router(login_mfa_router)
 app.include_router(security_router)
 app.include_router(platform_router)
@@ -108,5 +110,5 @@ async def capabilities() -> dict[str, object]:
         "mailcow": ["health", "domains", "mailboxes", "mailbox_create", "mailbox_update", "mailbox_password_reset", "aliases", "alias_create", "alias_update", "alias_delete", "distribution_lists", "user_mapping", "user_unmapping", "quota_summary", "sogo_link"],
         "calendar": ["personal", "family", "birthdays", "events", "recurrence", "reminders", "ics_import", "ics_export", "month_view", "week_view", "day_view", "calendar_colors", "filters", "event_edit", "event_move", "caldav_bindings", "caldav_pull", "caldav_push", "caldav_delete", "caldav_conflicts", "conflict_resolution", "sync_tokens", "etags", "automatic_sync", "reminder_queue"],
         "security": ["totp", "totp_qr", "recovery_codes", "password_reset_email", "revocable_sessions", "session_listing", "admin_mfa_policy", "admin_mfa_emergency_reset", "passkeys", "webauthn_registration", "webauthn_login", "login_rate_limit"],
-        "modules": ["calendar", "news", "marketplace", "support", "genealogy", "documents"],
+        "modules": ["calendar", "tasks", "news", "marketplace", "support", "genealogy", "documents"],
     }
