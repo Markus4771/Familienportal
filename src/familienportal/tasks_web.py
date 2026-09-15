@@ -72,6 +72,16 @@ def task_status(request:Request,task_id:UUID,status:str=Form(...),db:Session=Dep
  try:set_status(db,task,status);action="task.completed" if status=="done" else "task.reopened" if previous=="done" else "task.started" if status=="in_progress" else "task.status_changed";audit_task(db,action,user,task,previous_status=previous);db.commit()
  except TaskValidationError as exc:raise HTTPException(400,str(exc)) from exc
  return RedirectResponse("/tasks",303)
+@router.post("/tasks/{task_id}/quick-complete")
+def task_quick_complete(request:Request,task_id:UUID,db:Session=Depends(get_db)):
+ user=_user(request,db);task=get_task(db,user.family_id,task_id)
+ if not task or task.archived_at is not None:raise HTTPException(404,"Aufgabe nicht gefunden")
+ if not can_complete_task(user,task):raise HTTPException(403,"Keine Berechtigung zum Erledigen")
+ if task.status in {TaskStatus.DONE.value,TaskStatus.CANCELLED.value}:return RedirectResponse("/dashboard",303)
+ previous=task.status
+ try:set_status(db,task,TaskStatus.DONE.value);audit_task(db,"task.completed",user,task,previous_status=previous,source="dashboard");db.commit()
+ except TaskValidationError as exc:raise HTTPException(400,str(exc)) from exc
+ return RedirectResponse("/dashboard",303)
 @router.post("/tasks/{task_id}/archive")
 def task_archive(request:Request,task_id:UUID,db:Session=Depends(get_db)):
  user=_user(request,db);task=get_task(db,user.family_id,task_id)
