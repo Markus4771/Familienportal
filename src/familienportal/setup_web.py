@@ -15,6 +15,7 @@ from familienportal.security import hash_password
 
 router = APIRouter(tags=["setup"])
 templates = Jinja2Templates(directory=Path(__file__).resolve().parent / "templates")
+MIN_SETUP_PASSWORD_LENGTH = 10
 
 
 def setup_required(db: Session) -> bool:
@@ -24,6 +25,25 @@ def setup_required(db: Session) -> bool:
 def _slug(value: str) -> str:
     value = re.sub(r"[^a-z0-9]+", "-", value.strip().lower()).strip("-")
     return value or "familie"
+
+
+def _validate_setup_input(
+    family_name: str,
+    admin_name: str,
+    admin_email: str,
+    password: str,
+) -> None:
+    if not family_name.strip():
+        raise HTTPException(status_code=400, detail="Der Familienname darf nicht leer sein.")
+    if not admin_name.strip():
+        raise HTTPException(status_code=400, detail="Der Administratorname darf nicht leer sein.")
+    if not admin_email.strip():
+        raise HTTPException(status_code=400, detail="Die E-Mail-Adresse darf nicht leer sein.")
+    if len(password) < MIN_SETUP_PASSWORD_LENGTH:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Das Passwort muss mindestens {MIN_SETUP_PASSWORD_LENGTH} Zeichen lang sein.",
+        )
 
 
 @router.get("/setup", response_class=HTMLResponse)
@@ -47,6 +67,7 @@ def setup_submit(
         raise HTTPException(status_code=409, detail="Die Ersteinrichtung ist bereits abgeschlossen.")
     if profile not in {"small_family", "extended_family"}:
         raise HTTPException(status_code=400, detail="Ungültiges Familienprofil.")
+    _validate_setup_input(family_name, admin_name, admin_email, password)
     try:
         family = Family(name=family_name.strip(), slug=_slug(family_name), profile=profile)
         db.add(family)
