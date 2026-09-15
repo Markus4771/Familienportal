@@ -30,6 +30,10 @@ def _due(v):
  try:return datetime.fromisoformat(v)
  except ValueError as exc:raise HTTPException(400,"Ungültiges Fälligkeitsdatum") from exc
 def _choices(db,fid):return(db.scalars(select(User).where(User.family_id==fid,User.status==UserStatus.ACTIVE.value).order_by(User.display_name)).all(),db.scalars(select(Household).where(Household.family_id==fid).order_by(Household.name)).all())
+def _commit_or_rollback(db):
+ try:db.commit()
+ except Exception:
+  db.rollback();raise
 @router.get("/tasks",response_class=HTMLResponse)
 def tasks_page(request:Request,view:str="mine",assignee:str="",household:str="",priority:str="",due:str="",db:Session=Depends(get_db)):
  user=_user(request,db);archived=view=="archive";tasks=visible_tasks(user,list_tasks(db,user.family_id,archived=archived));now=datetime.now(timezone.utc)
@@ -45,8 +49,8 @@ def task_create(request:Request,title:str=Form(...),description:str=Form(""),ass
  if not can_create_task(user):raise HTTPException(403,"Keine Berechtigung")
  assignee_id=_uuid(assignee_user_id)
  if not can_set_assignee(user,assignee_id):raise HTTPException(403,"Keine Berechtigung zur Zuweisung an andere Benutzer")
- try:task=create_task(db,family_id=user.family_id,creator_user_id=user.id,title=title,description=description,assignee_user_id=assignee_id,household_id=_uuid(household_id),priority=priority,due_at=_due(due_at),is_private=is_private);audit_task(db,"task.created",user,task);db.commit()
- except TaskValidationError as exc:raise HTTPException(400,str(exc)) from exc
+ try:task=create_task(db,family_id=user.family_id,creator_user_id=user.id,title=title,description=description,assignee_user_id=assignee_id,household_id=_uuid(household_id),priority=priority,due_at=_due(due_at),is_private=is_private,commit=False);audit_task(db,"task.created",user,task);_commit_or_rollback(db)
+ except TaskValidationError as exc:db.rollback();raise HTTPException(400,str(exc)) from exc
  return RedirectResponse("/tasks",303)
 @router.get("/tasks/{task_id}/edit",response_class=HTMLResponse)
 def task_edit_page(request:Request,task_id:UUID,db:Session=Depends(get_db)):
@@ -61,16 +65,16 @@ def task_edit(request:Request,task_id:UUID,title:str=Form(...),description:str=F
  assignee_id=_uuid(assignee_user_id)
  if not can_set_assignee(user,assignee_id,task):raise HTTPException(403,"Keine Berechtigung zur Änderung der Zuweisung")
  old=task.assignee_user_id
- try:update_task(db,task,title=title,description=description,assignee_user_id=assignee_id,household_id=_uuid(household_id),priority=priority,due_at=_due(due_at),recurrence=recurrence or None,recurrence_interval=recurrence_interval,is_private=is_private);audit_task(db,"task.updated",user,task);audit_task(db,"task.assigned",user,task,previous_assignee_user_id=str(old) if old else None) if old!=task.assignee_user_id else None;db.commit()
- except TaskValidationError as exc:raise HTTPException(400,str(exc)) from exc
+ try:update_task(db,task,title=title,description=description,assignee_user_id=assignee_id,household_id=_uuid(household_id),priority=priority,due_at=_due(due_at),recurrence=recurrence or None,recurrence_interval=recurrence_interval,is_private=is_private,commit=False);audit_task(db,"task.updated",user,task);audit_task(db,"task.assigned",user,task,previous_assignee_user_id=str(old) if old else None) if old!=task.assignee_user_id else None;_commit_or_rollback(db)
+ except TaskValidationError as exc:db.rollback();raise HTTPException(400,str(exc)) from exc
  return RedirectResponse("/tasks",303)
 @router.post("/tasks/{task_id}/status")
 def task_status(request:Request,task_id:UUID,status:str=Form(...),db:Session=Depends(get_db)):
  user=_user(request,db);task=get_task(db,user.family_id,task_id)
  if not task or not can_complete_task(user,task):raise HTTPException(404,"Aufgabe nicht gefunden")
  previous=task.status
- try:set_status(db,task,status);action="task.completed" if status=="done" else "task.reopened" if previous=="done" else "task.started" if status=="in_progress" else "task.status_changed";audit_task(db,action,user,task,previous_status=previous);db.commit()
- except TaskValidationError as exc:raise HTTPException(400,str(exc)) from exc
+ try:set_status(db,task,status,commit=False);action="task.completed" if status=="done" else "task.reopened" if previous=="done" else "task.started" if status=="in_progress" else "task.status_changed";audit_task(db,action,user,task,previous_status=previous);_commit_or_rollback(db)
+ except TaskValidationError as exc:db.rollback();raise HTTPException(400,str(exc)) from exc
  return RedirectResponse("/tasks",303)
 @router.post("/tasks/{task_id}/quick-complete")
 def task_quick_complete(request:Request,task_id:UUID,db:Session=Depends(get_db)):
@@ -79,23 +83,23 @@ def task_quick_complete(request:Request,task_id:UUID,db:Session=Depends(get_db))
  if not can_complete_task(user,task):raise HTTPException(403,"Keine Berechtigung zum Erledigen")
  if task.status in {TaskStatus.DONE.value,TaskStatus.CANCELLED.value}:return RedirectResponse("/dashboard",303)
  previous=task.status
- try:set_status(db,task,TaskStatus.DONE.value);audit_task(db,"task.completed",user,task,previous_status=previous,source="dashboard");db.commit()
- except TaskValidationError as exc:raise HTTPException(400,str(exc)) from exc
+ try:set_status(db,task,TaskStatus.DONE.value,commit=False);audit_task(db,"task.completed",user,task,previous_status=previous,source="dashboard");_commit_or_rollback(db)
+ except TaskValidationError as exc:db.rollback();raise HTTPException(400,str(exc)) from exc
  return RedirectResponse("/dashboard",303)
 @router.post("/tasks/{task_id}/archive")
 def task_archive(request:Request,task_id:UUID,db:Session=Depends(get_db)):
  user=_user(request,db);task=get_task(db,user.family_id,task_id)
  if not task or not can_delete_task(user,task):raise HTTPException(404,"Aufgabe nicht gefunden")
- archive_task(db,task);audit_task(db,"task.archived",user,task);db.commit();return RedirectResponse("/tasks",303)
+ archive_task(db,task,commit=False);audit_task(db,"task.archived",user,task);_commit_or_rollback(db);return RedirectResponse("/tasks",303)
 @router.post("/tasks/{task_id}/restore")
 def task_restore(request:Request,task_id:UUID,db:Session=Depends(get_db)):
  user=_user(request,db);task=get_task(db,user.family_id,task_id)
  if not task or not can_delete_task(user,task):raise HTTPException(404,"Aufgabe nicht gefunden")
- restore_task(db,task);audit_task(db,"task.restored",user,task);db.commit();return RedirectResponse("/tasks?view=archive",303)
+ restore_task(db,task,commit=False);audit_task(db,"task.restored",user,task);_commit_or_rollback(db);return RedirectResponse("/tasks?view=archive",303)
 @router.post("/tasks/{task_id}/delete")
 def task_delete(request:Request,task_id:UUID,db:Session=Depends(get_db)):
  user=_user(request,db);task=get_task(db,user.family_id,task_id)
  if not task:raise HTTPException(404,"Aufgabe nicht gefunden")
  if not can_permanently_delete_task(user,task):raise HTTPException(403,"Endgültiges Löschen erfordert Aufgabenverwaltung")
  if task.archived_at is None:raise HTTPException(409,"Aufgabe muss vor dem endgültigen Löschen archiviert werden")
- audit_task(db,"task.deleted",user,task);db.flush();delete_task(db,task);return RedirectResponse("/tasks?view=archive",303)
+ audit_task(db,"task.deleted",user,task);delete_task(db,task,commit=False);_commit_or_rollback(db);return RedirectResponse("/tasks?view=archive",303)
