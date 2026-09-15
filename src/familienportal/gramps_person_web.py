@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from familienportal.database import get_db
 from familienportal.genealogy_document_models import GenealogyDocumentLink
-from familienportal.genealogy_privacy import can_view_living, is_living, redact_living
+from familienportal.genealogy_privacy import can_view_living, is_living, privacy_policy, visible_person
 from familienportal.gramps import GrampsError
 from familienportal.gramps_media import media_handles, normalize_media
 from familienportal.gramps_relationships import relationship_summary
@@ -34,13 +34,22 @@ def person_detail(handle: str, request: Request, db: Session = Depends(get_db)):
     if not state or not state.enabled:
         raise HTTPException(status_code=409, detail="Gramps Web ist nicht aktiviert")
     client = _client(state)
+    mode, age = privacy_policy(db, user.family_id)
     raw_person = client.person(handle)
-    living = is_living(raw_person)
-    living_access = can_view_living(user, raw_person)
-    person = raw_person if living_access else redact_living(raw_person)
+    living = is_living(raw_person, age)
+    living_access = can_view_living(user, raw_person, age)
+    person = visible_person(user, raw_person, mode, age)
+    if person is None:
+        raise HTTPException(status_code=404, detail="Person nicht gefunden")
     families = client.all_families()
     people = client.all_people()
-    people_by_handle = {str(item.get("handle")): (item if can_view_living(user, item) else redact_living(item)) for item in people if item.get("handle")}
+    people_by_handle = {}
+    for item in people:
+        if not item.get("handle"):
+            continue
+        visible = visible_person(user, item, mode, age)
+        if visible is not None:
+            people_by_handle[str(item.get("handle"))] = visible
     relations = relationship_summary(person, families, people_by_handle)
     media = []
     document_links = []
