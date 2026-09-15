@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 
 from familienportal.api import audit
 from familienportal.database import get_db
+from familienportal.genealogy_privacy import privacy_policy, visible_person
 from familienportal.gramps import GrampsClient, GrampsError
 from familienportal.gramps_models import GrampsUserMapping
 from familienportal.models import User
@@ -49,7 +50,9 @@ def genealogy_page(request: Request, q: str = Query(""), db: Session = Depends(g
     error = None
     if q.strip() and state and state.enabled:
         try:
-            results = _client(state).search(q.strip(), "people")
+            mode, age = privacy_policy(db, user.family_id)
+            raw_results = _client(state).search(q.strip(), "people")
+            results = [item for raw in raw_results if (item := visible_person(user, raw, mode, age)) is not None]
         except (GrampsError, HTTPException) as exc:
             error = str(getattr(exc, "detail", exc))
     mapping = db.scalar(select(GrampsUserMapping).where(GrampsUserMapping.family_id == user.family_id, GrampsUserMapping.user_id == user.id))
