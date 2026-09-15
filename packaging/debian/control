@@ -1,0 +1,10 @@
+Package: familienportal
+Version: 0.13.0~dev0
+Section: web
+Priority: optional
+Architecture: all
+Maintainer: Familienportal-Projekt
+Depends: python3 (>= 3.12), python3-venv, python3-pip, postgresql-client, curl, ca-certificates, tar
+Description: Modulare selbst gehostete Familienplattform
+ Familienportal verbindet Aufgaben, Kalender, Notizen, Listen und externe
+ Familiendienste in einer modularen selbst gehosteten Webplattform.
