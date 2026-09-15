@@ -32,18 +32,13 @@ jobs:
           import importlib
           import pkgutil
           import familienportal
-
           failures = []
-          modules = sorted(
-              module.name
-              for module in pkgutil.walk_packages(familienportal.__path__, familienportal.__name__ + ".")
-          )
+          modules = sorted(module.name for module in pkgutil.walk_packages(familienportal.__path__, familienportal.__name__ + "."))
           for name in modules:
               try:
                   importlib.import_module(name)
               except Exception as exc:
                   failures.append((name, type(exc).__name__, str(exc)))
-
           if failures:
               for name, error_type, message in failures:
                   print(f"IMPORT FAILED: {name}: {error_type}: {message}")
@@ -56,7 +51,7 @@ jobs:
           FAMILIENPORTAL_SESSION_SECRET_KEY: ci-session-secret
           FAMILIENPORTAL_SECURITY_ENCRYPTION_KEY: ci-security-encryption-key
         run: pytest
-      - name: Verify migrations 0013 to 0020
+      - name: Verify migrations 0013 to 0021
         env:
           FAMILIENPORTAL_DATABASE_URL: sqlite:///./ci-migrations.db
           FAMILIENPORTAL_SESSION_SECRET_KEY: ci-session-secret
@@ -64,7 +59,7 @@ jobs:
         run: |
           rm -f ci-migrations.db
           alembic upgrade 0013
-          for revision in 0014 0015 0016 0017 0018 0019 0020; do
+          for revision in 0014 0015 0016 0017 0018 0019 0020 0021; do
             alembic upgrade "$revision"
             test "$(alembic current 2>/dev/null | awk 'NF {print $1}' | tail -1)" = "$revision"
           done
