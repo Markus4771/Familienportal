@@ -27,11 +27,7 @@ class GrampsClient:
     def _request(self, path: str) -> Any:
         request = Request(
             f"{self.base_url}{path}",
-            headers={
-                "Accept": "application/json",
-                "Authorization": f"Bearer {self.access_token}",
-                "User-Agent": "Familienportal/0.8",
-            },
+            headers={"Accept": "application/json", "Authorization": f"Bearer {self.access_token}", "User-Agent": "Familienportal/0.8"},
         )
         try:
             with urlopen(request, timeout=self.timeout) as response:
@@ -74,6 +70,12 @@ class GrampsClient:
         result = self._request(f"/api/families/{quote(handle, safe='')}")
         if not isinstance(result, dict):
             raise GrampsError("Familie wurde nicht gefunden")
+        return result
+
+    def media(self, handle: str) -> dict[str, Any]:
+        result = self._request(f"/api/media/{quote(handle, safe='')}")
+        if not isinstance(result, dict):
+            raise GrampsError("Medium wurde nicht gefunden")
         return result
 
     def search(self, query_text: str, object_type: str = "people") -> list[dict[str, Any]]:
