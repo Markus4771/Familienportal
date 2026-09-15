@@ -21,27 +21,28 @@ def diagnose_endpoint(base_url: str | None, *, enabled: bool, timeout: float = 5
     if not base_url:
         return [DiagnosticStep("configuration", "Konfiguration", "error", "Basis-URL fehlt.")]
     parsed = urlparse(base_url)
-    if parsed.scheme not in {"http", "https"} or not parsed.hostname:
-        return [DiagnosticStep("configuration", "Konfiguration", "error", "Basis-URL ist ungültig.")]
+    if parsed.scheme not in {"http", "https"} or not parsed.hostname or parsed.username or parsed.password:
+        return [DiagnosticStep("configuration", "Konfiguration", "error", "Basis-URL ist ungültig oder enthält Zugangsdaten.")]
     steps.append(DiagnosticStep("configuration", "Konfiguration", "ok", "Basis-URL ist gültig."))
     request = Request(base_url, method="HEAD", headers={"User-Agent": "Familienportal/0.9.0"})
     try:
-        with urlopen(request, timeout=timeout) as response:
+        with urlopen(request, timeout=max(1.0, min(float(timeout), 15.0))) as response:
             code = response.getcode()
         steps.append(DiagnosticStep("network", "Netzwerk", "ok", f"Dienst antwortet mit HTTP {code}."))
-        steps.append(DiagnosticStep("authentication", "Authentifizierung", "unknown", "Dienstspezifische Anmeldung noch nicht geprüft."))
-        steps.append(DiagnosticStep("api", "API", "unknown", "Dienstspezifische API-Prüfung noch nicht ausgeführt."))
+        steps.append(DiagnosticStep("authentication", "Authentifizierung", "unknown", "Dienstspezifische Anmeldung wird separat geprüft."))
     except HTTPError as exc:
         if exc.code in {401, 403}:
             steps.append(DiagnosticStep("network", "Netzwerk", "ok", f"Dienst erreichbar (HTTP {exc.code})."))
-            steps.append(DiagnosticStep("authentication", "Authentifizierung", "warning", "Dienst verlangt Authentifizierung."))
-            steps.append(DiagnosticStep("api", "API", "unknown", "API-Prüfung benötigt Connector-Zugangsdaten."))
+            steps.append(DiagnosticStep("authentication", "Authentifizierung", "unknown", "Basis-Endpunkt verlangt Anmeldung; Connector-Anmeldung wird separat geprüft."))
+        elif exc.code in {405, 501}:
+            steps.append(DiagnosticStep("network", "Netzwerk", "ok", f"Dienst erreichbar; HEAD wird nicht unterstützt (HTTP {exc.code})."))
+            steps.append(DiagnosticStep("authentication", "Authentifizierung", "unknown", "Connector-Anmeldung wird separat geprüft."))
         elif 400 <= exc.code < 500:
             steps.append(DiagnosticStep("network", "Netzwerk", "ok", f"Dienst erreichbar (HTTP {exc.code})."))
-            steps.append(DiagnosticStep("api", "API", "warning", "Basis-Endpunkt antwortet mit einem Clientfehler."))
+            steps.append(DiagnosticStep("api", "API", "unknown", "Basis-Endpunkt liefert einen Clientfehler; dienstspezifische API wird separat geprüft."))
         else:
             steps.append(DiagnosticStep("network", "Netzwerk", "error", f"Dienst antwortet mit HTTP {exc.code}."))
-    except (URLError, TimeoutError) as exc:
-        reason = getattr(exc, "reason", None) or "Zeitüberschreitung oder Verbindungsfehler"
+    except (URLError, TimeoutError, OSError) as exc:
+        reason = getattr(exc, "reason", None) or str(exc) or "Zeitüberschreitung oder Verbindungsfehler"
         steps.append(DiagnosticStep("network", "Netzwerk", "error", str(reason)))
     return steps
