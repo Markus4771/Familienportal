@@ -66,7 +66,7 @@
 - DAV-Diagnose
 - eigene Verwaltungsoberfläche
 - Audit für Zuordnungen und Ordneranlage
-- Migration 0004 für Nextcloud-Zuordnungen und Ordneranlage
+- Migration 0004 für Nextcloud-Zuordnungen
 
 ## 0.5.0 – Kalenderplattform – umgesetzt
 
@@ -98,136 +98,37 @@
 - API für Bindings, Konflikte und manuellen Sync
 - Migration 0006
 
-## 0.5.2 – Kalenderoberfläche und Konfliktauflösung – umgesetzt
+## 0.5.2 – Nextcloud-CalDAV-Oberfläche – umgesetzt
 
-- Monatsansicht
-- Wochenansicht
-- Tagesansicht
-- Kalenderfarben
-- Kalenderfilter
-- Termine bearbeiten
-- Termine zeitlich verschieben
-- Termine zwischen Kalendern verschieben
-- bestehende Tombstone-Löschlogik weiterverwenden
-- grafische Konfliktliste
-- Konfliktentscheidung „lokale Version behalten“
-- Konfliktentscheidung „Nextcloud übernehmen“
-- sicherer Remote-Abgleich über aktuelles ETag vor Konfliktauflösung
+- Monats-, Wochen- und Tagesansicht
+- Kalenderfarben und Filter
+- Termine bearbeiten und verschieben
+- grafische Konfliktauflösung
 - Migration 0007
-- Tests für Ansichtsperioden
 
 ## 0.5.3 – automatische Synchronisation und Erinnerungen – umgesetzt
 
 - automatische CalDAV-Synchronisation über systemd-Timer
 - Reminder-Queue als persistenter Jobstatus
-- SMTP-Versand für fällige Erinnerungen
-- Retry-Zähler und letzter Zustellversuch
-- getrennte One-Shot-Dienste für Synchronisation und Reminder
-- Debian-Installer aktiviert die Timer
+- SMTP-Versand und Retry
 - Migrationen 0008/0009
 
-## 0.6.0 – Mailcow-Basis – umgesetzt
+## 0.6.x – Mailcow – umgesetzt
 
-- API-Key-basierter Connector
-- Domains lesen
-- Postfächer lesen
-- Aliase lesen
-- Quota-Summen
-- Healthcheck
-- Statusseite unter `/platform/mailcow`
+- API-Key-Connector, Domains, Postfächer, Aliase und Quota
+- Benutzer-/Postfach-Zuordnung
+- Passwortverwaltung und Verteiler
+- Verwaltungsoberfläche und Healthcheck
 
-## 0.6.1 – Mailcow-Verwaltung – umgesetzt
+## 0.7.x – Sicherheit und Betrieb – umgesetzt
 
-- Portal-Benutzer einem Mailcow-Postfach zuordnen
-- Postfächer über die Mailcow-API anlegen
-- Anzeigename, Quota und Aktivstatus ändern
-- Alias/Verteiler anlegen
-- Alias-Ziel und Aktivstatus ändern
-- Verwaltungsoberfläche unter `/platform/mailcow/management`
-- SOGo/Webmail-Link
-- Startpasswörter werden nicht im Familienportal gespeichert
-- Migration 0009 für Mailcow-Zuordnungen und Reminder-Retry-State
-- Tests für Mailbox-API-Payloads
-
-## 0.6.2 – Benutzer-, Verteiler- und Passwortverwaltung – umgesetzt
-
-- Administrator kann das Passwort eines Mailcow-Postfachs neu setzen
-- neues Passwort wird nicht im Familienportal gespeichert
-- Portal-Benutzer/Postfach-Zuordnung kann wieder gelöst werden
-- Verteiler mit mehreren Empfängern komfortabel anlegen und bearbeiten
-- Empfänger werden aus Komma, Semikolon oder Zeilenumbrüchen normalisiert
-- doppelte Empfänger werden entfernt
-- Alias/Verteiler aktivieren oder deaktivieren
-- Alias/Verteiler aus der GUI löschen
-- Capabilities für Passwort-Reset, Alias-Löschen, Verteiler und Unmapping
-- keine zusätzliche Datenbankmigration erforderlich
-
-## 0.7.0 – Sicherheitskern – umgesetzt
-
-- TOTP-Zwei-Faktor-Authentifizierung
-- verschlüsselte Speicherung der TOTP-Seeds
-- einmalige Recovery-Codes mit Hash-Speicherung
-- Login mit TOTP oder Recovery-Code
-- Web- und REST-Login erzwingen 2FA bei aktiviertem Konto
-- optionale Administrator-2FA-Richtlinie
-- Passwort-Zurücksetzung per E-Mail
-- neutrale Antwort beim Passwort-Reset-Antrag
-- gehashte, zeitlich begrenzte Reset-Verifier
-- serverseitige, widerrufbare Sitzungen
-- Sitzungsübersicht und Abmelden einzelner/aller anderen Sitzungen
-- Session-Widerruf bei Passwort-Reset und Kontosperre
-- Passkey/WebAuthn-Datenmodell vorbereitet
-- Migration 0010
-
-## 0.7.1 – Passkeys, QR, Login-Schutz und 2FA-Notfallreset – umgesetzt
-
-- WebAuthn-/Passkey-Registrierung
-- Passkey-Anmeldung über Browser/Plattform-Authenticator
-- mehrere Passkeys pro Benutzer verwalten und löschen
-- RP-ID und Origin aus PUBLIC_URL ableiten oder explizit konfigurieren
-- QR-Code bei der TOTP-Einrichtung
-- persistente Login-Rate-Limits
-- zeitweise Sperre nach wiederholten Fehlversuchen
-- Rate-Limits für Passwort-, MFA-, REST- und Passkey-Anmeldung
-- Administrator-Notfallreset für 2FA mit eigenem Passwort und optional eigenem 2FA-Code
-- Zielkonto-Sessions werden beim Notfallreset widerrufen
-- Migration 0011
-- Tests für WebAuthn-Konfiguration und anonymisierte Throttle-Schlüssel
-
-## 0.7.2 – Security Hardening – umgesetzt
-
-- zentraler Same-Origin-/CSRF-Schutz für schreibende Browser-Anfragen
-- Security-Header: CSP, Frame-Schutz, MIME-Sniffing-Schutz, Referrer-Policy und Permissions-Policy
-- HSTS bei HTTPS-Betrieb
-- rollenbasierte 2FA-Pflicht über `FAMILIENPORTAL_MFA_REQUIRED_ROLES`
-- tägliche Bereinigung alter Login-Throttles, Recovery-Anfragen und Sessions
-- konfigurierbare Aufbewahrungsdauer für Security-Datensätze
-- systemd Security-Cleanup-Service und Timer
-- Debian-Installer aktiviert den Cleanup-Timer
-- Tests für Security-Header sowie Same-Origin-/Cross-Origin-Anfragen
-
-## 0.7.3 – Installation, Updates, Backup und Rollback – umgesetzt
-
-- Lifecycle-Manager `familienportalctl`
-- Status- und Versionsanzeige
-- manuelle Backups
-- automatisches Backup vor jedem Update
-- Anwendung, Konfiguration und Datenverzeichnis im Backup
-- SQLite-Backup und PostgreSQL-Custom-Dump
-- Update aus geprüftem Quellverzeichnis
-- automatische Datenbankmigration beim Update
-- Healthcheck nach Update
-- automatischer Rollback bei fehlgeschlagenem Healthcheck
-- manueller Rollback auf letztes oder bestimmtes Backup
-- Deinstallation mit Datenerhalt
-- vollständige Entfernung über `--purge`
-- Release-Versionserkennung über `familienportal-release`
-- Release-basierte Installation und Updates
-- SHA256-Prüfung von Release-Artefakten
-- GitHub-Release-Workflow für Tags `v*`
-- stabile Versionsnummer wird beim Release aus dem Git-Tag in das Archiv geschrieben
-- Deployment-Skripte werden durch die Pytest-Suite per `bash -n` geprüft
-- keine zusätzliche Datenbankmigration erforderlich
+- TOTP, Recovery-Codes und Passkeys/WebAuthn
+- Login-Rate-Limits und Administrator-2FA-Notfallreset
+- CSRF-/Same-Origin-Schutz und Security-Header
+- rollenbasierte 2FA-Pflicht
+- Security-Cleanup
+- Lifecycle-Manager, Backup, Update und Rollback
+- GitHub-Release-Workflow und SHA256-Prüfung
 
 ### Nächste Ausbaustufe 0.7.4 / Packaging
 
@@ -236,57 +137,48 @@
 - Backup-Retention und automatische Rotation
 - Update-Kanal stable/beta
 - CSP ohne `unsafe-inline`
-- optional zusätzliche synchronizer CSRF-Tokens
 
 ## 0.8.0 – Gramps Web / Ahnenforschung – umgesetzt
 
-- Gramps-Web-Connector über die native REST-API
-- Token nur über Secret-Referenz, kein Gramps-Passwort in der Portal-Datenbank
-- API- und Healthcheck
-- Benutzer-/Rechtezuordnung zwischen Portal und Gramps Web
-- optionaler Person-Handle je Portal-Benutzer
-- Personen- und Familiensuche
-- Person- und Familiendetails über Portal-REST-Endpunkte
-- Übersicht für Geburtstage und Gedenktage
-- GEDCOM-Export über Gramps-Web-Tasks
-- GEDCOM-Import für Administratoren mit Größen- und Dateitypprüfung
-- Migration 0012 für Gramps-Benutzerzuordnungen
-- Tests für Payload-Normalisierung, Suche und Lebensdaten
+- Gramps-Web-Connector über REST-API
+- Token über Secret-Referenz
+- Benutzer-/Rechtezuordnung
+- Personen-/Familiensuche und Details
+- Geburtstage/Gedenktage
+- GEDCOM Import/Export
+- Migration 0012
 
 ## 0.8.1 – Gramps ↔ Kalender – umgesetzt
 
-- eigener Portal-Kalender `Familie & Ahnen`
-- Geburtstage aus Gramps Web automatisch als Ganztagstermine übernehmen
-- Gedenktage aus Gramps Web automatisch als Ganztagstermine übernehmen
-- stabiles Mapping über `external_uid` und `source=gramps`
-- idempotente Synchronisation ohne Dubletten
-- Änderungen an Namen und Lebensdaten aktualisieren bestehende Termine
-- entfernte Lebensdaten werden im Portal-Kalender soft-deleted
-- rollierendes Fenster für aktuelles Jahr plus zwei Folgejahre
-- Schaltjahrbehandlung für den 29. Februar
-- separater systemd Worker und 30-Minuten-Timer
-- Debian-Erstinstaller aktiviert den neuen Timer automatisch
-- Tests für Datumsnormalisierung, stabile UIDs und Geburtstags-/Gedenktagsgenerierung
-- keine zusätzliche Datenbankmigration erforderlich
+- Kalender `Familie & Ahnen`
+- automatische Geburtstags-/Gedenktag-Synchronisation
+- idempotentes Mapping und 30-Minuten-Timer
+- keine zusätzliche Migration
 
 ## 0.8.2 – Personendetails und Beziehungen – umgesetzt
 
-- eigene Personendetailseite im Familienportal
-- direkte Navigation aus der Personensuche
-- Anzeige von Gramps-ID sowie Geburts- und Sterbeinformationen
-- Eltern, Partner und Kinder aus Gramps-Familienbeziehungen auflösen
-- klickbare Navigation zwischen verwandten Personen
-- kompakte Stammbaum-/Beziehungsübersicht im Portal
-- direkter Link zur Person in Gramps Web
-- bestehende `genealogy.read`-Berechtigung wird weiterverwendet
-- Tests für verschiedene Familienreferenz-Formate und Beziehungsauflösung
+- Personendetailseite
+- Eltern, Partner und Kinder
+- klickbare Beziehungen und kompakte Stammbaumübersicht
+- direkter Gramps-Web-Link
+- keine zusätzliche Migration
+
+## 0.8.3 – Medien & Dokumente – umgesetzt
+
+- Medienreferenzen einer Gramps-Person erkennen und normalisieren
+- Gramps-Medienobjekte über die REST-API auflösen
+- Medien und Dokumente direkt auf der Personendetailseite anzeigen
+- Titel, MIME-Typ, Beschreibung und Quellpfad darstellen
+- direkter Sprung zum Originalobjekt in Gramps Web
+- Originaldateien werden nicht im Familienportal dupliziert
+- Tests für verschiedene Medienreferenz-Formate und Normalisierung
 - keine zusätzliche Datenbankmigration erforderlich
 
-### Nächste Gramps-Ausbaustufe 0.8.3
+### Nächste Gramps-Ausbaustufe 0.8.4
 
-- Medien- und Dokument-Verknüpfungen
 - Nextcloud-Verknüpfung für Familienfotos und Urkunden
 - optional Paperless-ngx für Dokumente
+- Vorschau/Thumbnail-Proxy mit Rechteprüfung
 - Datenschutzregeln für lebende Personen weiter verfeinern
 - optional OIDC/SSO mit Gramps Web
 
