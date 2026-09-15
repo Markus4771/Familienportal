@@ -21,15 +21,26 @@ def required_roles() -> set[str]:
     return {item.strip() for item in raw.split(",") if item.strip()}
 
 
+def session_user_id(request: Request) -> str | None:
+    # SessionMiddleware stores the decoded session in scope. If this middleware
+    # is ever ordered outside SessionMiddleware, fail closed without raising an
+    # AssertionError during application startup or health requests.
+    session = request.scope.get("session")
+    if not isinstance(session, dict):
+        return None
+    value = session.get("user_id")
+    return str(value) if value else None
+
+
 class RoleMfaPolicyMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         roles = required_roles()
-        user_value = request.session.get("user_id")
+        user_value = session_user_id(request)
         if not roles or not user_value or request.url.path.startswith(ALLOWED_PREFIXES):
             return await call_next(request)
         try:
             user_id = UUID(user_value)
-        except ValueError:
+        except (ValueError, TypeError):
             return await call_next(request)
         with SessionLocal() as db:
             user = db.get(User, user_id)
