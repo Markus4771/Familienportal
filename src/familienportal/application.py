@@ -15,6 +15,7 @@ from familienportal.main import app
 from familienportal.paperless_web import router as paperless_router
 from familienportal.role_mfa_policy import RoleMfaPolicyMiddleware
 from familienportal.security_http import CsrfOriginMiddleware, SecurityHeadersMiddleware
+from familienportal.tasks_web import router as tasks_router
 
 BUILTIN_MODULES["genealogy"]["route"] = "/genealogy"
 
@@ -31,6 +32,7 @@ app.include_router(paperless_router)
 app.include_router(integration_admin_router)
 app.include_router(admin_status_web_router)
 app.include_router(admin_status_api_router)
+app.include_router(tasks_router)
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(CsrfOriginMiddleware)
 app.add_middleware(RoleMfaPolicyMiddleware)
