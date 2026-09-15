@@ -25,10 +25,7 @@ class GrampsClient:
         self.timeout = timeout
 
     def _request(self, path: str) -> Any:
-        request = Request(
-            f"{self.base_url}{path}",
-            headers={"Accept": "application/json", "Authorization": f"Bearer {self.access_token}", "User-Agent": "Familienportal/0.8"},
-        )
+        request = Request(f"{self.base_url}{path}", headers={"Accept": "application/json", "Authorization": f"Bearer {self.access_token}", "User-Agent": "Familienportal/0.8.7"})
         try:
             with urlopen(request, timeout=self.timeout) as response:
                 raw = response.read().decode("utf-8")
@@ -59,6 +56,30 @@ class GrampsClient:
     def families(self, page: int = 1, pagesize: int = 50) -> list[dict[str, Any]]:
         params = urlencode({"page": max(1, page), "pagesize": min(max(1, pagesize), 200), "profile": "self"})
         return self._rows(self._request(f"/api/families/?{params}"))
+
+    def _all_pages(self, loader, *, pagesize: int = 200, max_pages: int = 100) -> list[dict[str, Any]]:
+        result: list[dict[str, Any]] = []
+        seen: set[str] = set()
+        for page in range(1, max_pages + 1):
+            rows = loader(page=page, pagesize=pagesize)
+            if not rows:
+                break
+            new_rows = []
+            for item in rows:
+                identity = str(item.get("handle") or item.get("gramps_id") or repr(item))
+                if identity not in seen:
+                    seen.add(identity)
+                    new_rows.append(item)
+            result.extend(new_rows)
+            if len(rows) < pagesize or not new_rows:
+                break
+        return result
+
+    def all_people(self, *, max_pages: int = 100) -> list[dict[str, Any]]:
+        return self._all_pages(self.people, max_pages=max_pages)
+
+    def all_families(self, *, max_pages: int = 100) -> list[dict[str, Any]]:
+        return self._all_pages(self.families, max_pages=max_pages)
 
     def person(self, handle: str) -> dict[str, Any]:
         result = self._request(f"/api/people/{quote(handle, safe='')}")
