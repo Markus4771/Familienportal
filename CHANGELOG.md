@@ -2,6 +2,29 @@
 
 Alle wesentlichen Änderungen am Familienportal werden in dieser Datei dokumentiert.
 
+## 0.13.0 – 2026-09-15
+
+### Produktivbetrieb I
+- Debian-13-Installer gehärtet und native Debian-Paketbasis mit systemd-Integration ergänzt.
+- First-Run-Setup-Assistent für Familie, Haushalt und ersten Superadministrator hinzugefügt.
+- Update-Lifecycle auf Release-`.deb` mit Pflicht-Backup, Alembic-Migration und Readiness-Prüfung ausgerichtet.
+- Backup & Restore für Anwendung, Konfiguration, lokale Daten, SQLite und PostgreSQL einschließlich Prüfsummen und Rollback erweitert.
+- Geführter Integrations-Assistent für Nextcloud, Mailcow, Paperless-ngx und Gramps Web ergänzt.
+- Mobile Navigation, Touch-Bedienung, responsive Karten/Formulare und Dashboard für Smartphones verbessert.
+- Navigation und Verwaltungsbereiche vereinheitlicht sowie Schnellaktionen auf dem Dashboard ergänzt.
+- Zentrale Systemdiagnose zeigt Version, Umgebung, Datenbank, Migration, Speicherbelegung, Integrationsstatus und Audit-Ereignisse.
+
+### Qualität und Release
+- CI prüft Python- und Shell-Syntax, Importintegrität, Regressionstests und die Alembic-Migrationskette bis 0023.
+- Upgrade-Baseline von 0.12 auf 0.13 wird über die Migrationskette geprüft.
+- Debian-`.deb` wird in CI gebaut und auf Paketinhalt geprüft.
+- Secret-Leak-Prüfung verhindert versehentliches Verpacken von `.env`, `familienportal.env` und Git-Metadaten.
+- CI #404 für den 0.13-Release-Kandidaten war vollständig erfolgreich.
+
+### Betriebsanforderungen
+- Externe Connectoren müssen weiterhin mit den tatsächlich eingesetzten Diensten und Zugangsdaten im Zielsystem getestet werden.
+- Vor produktiver Freigabe sollte das Stable-`.deb` zusätzlich auf einer echten Debian-13-Instanz installiert und der Restore-Pfad praktisch geprüft werden.
+
 ## 0.12.0 – 2026-09-15
 
 ### Familienalltag III
