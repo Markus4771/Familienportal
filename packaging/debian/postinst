@@ -1,0 +1,44 @@
+#!/bin/sh
+set -e
+
+APP_DIR=/opt/familienportal
+CONFIG_DIR=/etc/familienportal
+DATA_DIR=/var/lib/familienportal
+BACKUP_DIR=/var/backups/familienportal
+
+if ! getent group familienportal >/dev/null; then
+    addgroup --system familienportal
+fi
+if ! getent passwd familienportal >/dev/null; then
+    adduser --system --ingroup familienportal --home "$DATA_DIR" --no-create-home --disabled-login familienportal
+fi
+
+install -d -o familienportal -g familienportal -m 0750 "$DATA_DIR"
+install -d -o root -g familienportal -m 0750 "$CONFIG_DIR" "$BACKUP_DIR"
+
+if [ ! -d "$APP_DIR/.venv" ]; then
+    python3 -m venv "$APP_DIR/.venv"
+fi
+"$APP_DIR/.venv/bin/python" -m pip install --upgrade pip
+"$APP_DIR/.venv/bin/python" -m pip install "$APP_DIR"
+chown -R familienportal:familienportal "$APP_DIR/.venv" "$DATA_DIR"
+
+if [ ! -f "$CONFIG_DIR/familienportal.env" ] && [ -f "$APP_DIR/.env.example" ]; then
+    install -o root -g familienportal -m 0640 "$APP_DIR/.env.example" "$CONFIG_DIR/familienportal.env"
+    SESSION_SECRET=$(python3 -c 'import secrets; print(secrets.token_urlsafe(48))')
+    SECURITY_SECRET=$(python3 -c 'import secrets; print(secrets.token_urlsafe(48))')
+    sed -i "s|CHANGE_ME_WITH_A_LONG_RANDOM_VALUE|${SESSION_SECRET}|" "$CONFIG_DIR/familienportal.env"
+    sed -i "s|CHANGE_ME_WITH_ANOTHER_LONG_RANDOM_VALUE|${SECURITY_SECRET}|" "$CONFIG_DIR/familienportal.env"
+fi
+
+systemctl daemon-reload || true
+systemctl enable familienportal.service || true
+for timer in familienportal-calendar-sync.timer familienportal-gramps-calendar-sync.timer familienportal-reminder-queue.timer familienportal-security-cleanup.timer; do
+    systemctl enable "$timer" || true
+done
+
+if [ "$1" = "configure" ]; then
+    systemctl try-restart familienportal.service || true
+fi
+
+exit 0
