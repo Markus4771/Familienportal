@@ -11,12 +11,12 @@ Status: Entwicklung (`0.13.0-dev`)
 1. [x] Entwicklungsstand auf `0.13.0-dev` setzen und Roadmap dokumentieren.
 2. [x] Debian-Installer für Debian 13 härten: Voraussetzungen, Systembenutzer, Verzeichnisse, Python-Umgebung, systemd-Dienste, Test-/Produktionsmodus und Gesundheitsprüfung.
 3. [x] Native `.deb`-Paketbasis ergänzen: Debian-Metadaten, Build-Skript, Installations-/Upgrade-Skripte und systemd-Integration.
-4. [x] Browserbasierter First-Run-Setup-Assistent für Familie, Haushalt, Profil und ersten Superadministrator; nach erfolgreicher Einrichtung gesperrt. Infrastrukturwerte wie Datenbank und öffentliche URL bleiben bewusst in der geschützten Serverkonfiguration.
+4. [x] Browserbasierter First-Run-Setup-Assistent für Familie, Haushalt, Profil und ersten Superadministrator; nach erfolgreicher Einrichtung gesperrt.
 5. [x] Update-System auf Release-`.deb` ausgerichtet: Versionsprüfung, Pflicht-Backup, Paketaktualisierung, Alembic-Migration und Readiness-Prüfung. Vollständiger 0.12→0.13-Live-Test folgt in Punkt 11.
 6. [x] Backup & Restore für Anwendung, Konfiguration, lokale Daten sowie SQLite/PostgreSQL; Backup-Liste, Prüfsummenprüfung und Restore/Rollback ergänzt.
-7. [ ] Integrations-Assistent für Nextcloud, Mailcow, Paperless-ngx und Gramps Web mit Verbindungstest.
-8. [ ] Mobile Oberfläche für Dashboard, Aufgaben, Listen, Notizen und Kalender weiter optimieren.
-9. [ ] Navigation und Startseite vereinheitlichen; Schnellaktionen und personalisierbares Familien-Dashboard ausbauen.
+7. [x] Integrations-Assistent für Nextcloud, Mailcow, Paperless-ngx und Gramps Web: URL, Benutzer/Secret-Referenz, Aktivierung und unmittelbarer Verbindungstest. Secrets werden nicht als Klartext im Assistenten gespeichert.
+8. [x] Mobile Oberfläche: responsive Shell, größere Touch-Ziele, mobile Bottom-Navigation, kompaktere Karten/Formulare und mobile Dashboard-Anordnung. Detail-Feinschliff einzelner Module bleibt Bestandteil der Regression in Punkt 11.
+9. [x] Navigation und Startseite vereinheitlicht: Admin-Funktionen gruppiert, Schnellaktionen ergänzt und Dashboard für Familienalltag und Smartphone verdichtet.
 10. [ ] Zentrale Systemdiagnose für Dienste, Datenbank, Speicher, Connectoren, Migrationen und Version.
 11. [ ] Security-, Installer-, Update-, Backup- und Regressionstests; Upgrade-Pfad `0.12.0 -> 0.13.0` in CI prüfen.
 12. [ ] Stable Release `0.13.0` nach vollständigem grünen CI und Upgrade-Test veröffentlichen.
