@@ -6,6 +6,7 @@ from familienportal.task_permissions import (
     can_complete_task,
     can_delete_task,
     can_edit_task,
+    can_permanently_delete_task,
     can_read_task,
     can_set_assignee,
 )
@@ -76,12 +77,38 @@ def test_owner_needs_edit_permission_to_edit():
     assert can_edit_task(editor, item)
 
 
-def test_owner_needs_delete_permission_to_delete():
+def test_owner_needs_delete_permission_to_archive():
     owner = user()
     item = task_for(owner)
     assert not can_delete_task(owner, item)
     owner.roles[0].permissions = "tasks.delete"
     assert can_delete_task(owner, item)
+
+
+def test_delete_permission_does_not_allow_permanent_delete():
+    owner = user("tasks.delete")
+    item = task_for(owner)
+    assert can_delete_task(owner, item)
+    assert not can_permanently_delete_task(owner, item)
+
+
+def test_manage_permission_allows_permanent_delete():
+    manager = user("tasks.manage")
+    item = task_for(manager)
+    assert can_permanently_delete_task(manager, item)
+
+
+def test_superadmin_can_permanently_delete():
+    admin = user(superadmin=True)
+    item = task_for(admin)
+    assert can_permanently_delete_task(admin, item)
+
+
+def test_permanent_delete_is_denied_across_family_boundary():
+    manager = user("tasks.manage")
+    outsider = user()
+    item = task_for(outsider)
+    assert not can_permanently_delete_task(manager, item)
 
 
 def test_user_without_assign_permission_can_assign_task_to_self_or_nobody():
