@@ -11,7 +11,7 @@ from familienportal.models import Household,User,UserStatus
 from familienportal.task_audit import audit_task
 from familienportal.task_filters import filter_tasks,presentation
 from familienportal.task_models import TaskStatus
-from familienportal.task_permissions import can_complete_task,can_create_task,can_delete_task,can_edit_task,can_read_task,visible_tasks
+from familienportal.task_permissions import can_complete_task,can_create_task,can_delete_task,can_edit_task,can_read_task,can_set_assignee,visible_tasks
 from familienportal.task_service import TaskValidationError,archive_task,create_task,delete_task,get_task,list_tasks,restore_task,set_status,update_task
 router=APIRouter(include_in_schema=False);templates=Jinja2Templates(directory="src/familienportal/templates")
 def _user(request,db):
@@ -43,7 +43,9 @@ def tasks_page(request:Request,view:str="mine",assignee:str="",household:str="",
 def task_create(request:Request,title:str=Form(...),description:str=Form(""),assignee_user_id:str=Form(""),household_id:str=Form(""),priority:str=Form("normal"),due_at:str=Form(""),is_private:bool=Form(False),db:Session=Depends(get_db)):
  user=_user(request,db)
  if not can_create_task(user):raise HTTPException(403,"Keine Berechtigung")
- try:task=create_task(db,family_id=user.family_id,creator_user_id=user.id,title=title,description=description,assignee_user_id=_uuid(assignee_user_id),household_id=_uuid(household_id),priority=priority,due_at=_due(due_at),is_private=is_private);audit_task(db,"task.created",user,task);db.commit()
+ assignee_id=_uuid(assignee_user_id)
+ if not can_set_assignee(user,assignee_id):raise HTTPException(403,"Keine Berechtigung zur Zuweisung an andere Benutzer")
+ try:task=create_task(db,family_id=user.family_id,creator_user_id=user.id,title=title,description=description,assignee_user_id=assignee_id,household_id=_uuid(household_id),priority=priority,due_at=_due(due_at),is_private=is_private);audit_task(db,"task.created",user,task);db.commit()
  except TaskValidationError as exc:raise HTTPException(400,str(exc)) from exc
  return RedirectResponse("/tasks",303)
 @router.get("/tasks/{task_id}/edit",response_class=HTMLResponse)
@@ -56,8 +58,10 @@ def task_edit_page(request:Request,task_id:UUID,db:Session=Depends(get_db)):
 def task_edit(request:Request,task_id:UUID,title:str=Form(...),description:str=Form(""),assignee_user_id:str=Form(""),household_id:str=Form(""),priority:str=Form("normal"),due_at:str=Form(""),recurrence:str=Form(""),recurrence_interval:int=Form(1),is_private:bool=Form(False),db:Session=Depends(get_db)):
  user=_user(request,db);task=get_task(db,user.family_id,task_id)
  if not task or not can_edit_task(user,task):raise HTTPException(404,"Aufgabe nicht gefunden")
+ assignee_id=_uuid(assignee_user_id)
+ if not can_set_assignee(user,assignee_id,task):raise HTTPException(403,"Keine Berechtigung zur Änderung der Zuweisung")
  old=task.assignee_user_id
- try:update_task(db,task,title=title,description=description,assignee_user_id=_uuid(assignee_user_id),household_id=_uuid(household_id),priority=priority,due_at=_due(due_at),recurrence=recurrence or None,recurrence_interval=recurrence_interval,is_private=is_private);audit_task(db,"task.updated",user,task);audit_task(db,"task.assigned",user,task,previous_assignee_user_id=str(old) if old else None) if old!=task.assignee_user_id else None;db.commit()
+ try:update_task(db,task,title=title,description=description,assignee_user_id=assignee_id,household_id=_uuid(household_id),priority=priority,due_at=_due(due_at),recurrence=recurrence or None,recurrence_interval=recurrence_interval,is_private=is_private);audit_task(db,"task.updated",user,task);audit_task(db,"task.assigned",user,task,previous_assignee_user_id=str(old) if old else None) if old!=task.assignee_user_id else None;db.commit()
  except TaskValidationError as exc:raise HTTPException(400,str(exc)) from exc
  return RedirectResponse("/tasks",303)
 @router.post("/tasks/{task_id}/status")
