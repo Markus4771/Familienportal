@@ -4,6 +4,7 @@ Revision ID: 0023
 Revises: 0022
 """
 from alembic import op
+import sqlalchemy as sa
 
 revision = "0023"
 down_revision = "0022"
@@ -12,12 +13,15 @@ depends_on = None
 
 
 def upgrade() -> None:
-    # Service-level validation remains authoritative across SQLite/PostgreSQL.
-    # Partial indexes prevent logical duplicates despite NULL semantics.
-    op.create_index("uq_content_link_note_task", "content_links", ["family_id", "note_id", "task_id"], unique=True, postgresql_where="note_id IS NOT NULL AND task_id IS NOT NULL", sqlite_where="note_id IS NOT NULL AND task_id IS NOT NULL")
-    op.create_index("uq_content_link_note_event", "content_links", ["family_id", "note_id", "event_id"], unique=True, postgresql_where="note_id IS NOT NULL AND event_id IS NOT NULL", sqlite_where="note_id IS NOT NULL AND event_id IS NOT NULL")
-    op.create_index("uq_content_link_list_task", "content_links", ["family_id", "list_id", "task_id"], unique=True, postgresql_where="list_id IS NOT NULL AND task_id IS NOT NULL", sqlite_where="list_id IS NOT NULL AND task_id IS NOT NULL")
-    op.create_index("uq_content_link_list_event", "content_links", ["family_id", "list_id", "event_id"], unique=True, postgresql_where="list_id IS NOT NULL AND event_id IS NOT NULL", sqlite_where="list_id IS NOT NULL AND event_id IS NOT NULL")
+    indexes = (
+        ("uq_content_link_note_task", ["family_id", "note_id", "task_id"], "note_id IS NOT NULL AND task_id IS NOT NULL"),
+        ("uq_content_link_note_event", ["family_id", "note_id", "event_id"], "note_id IS NOT NULL AND event_id IS NOT NULL"),
+        ("uq_content_link_list_task", ["family_id", "list_id", "task_id"], "list_id IS NOT NULL AND task_id IS NOT NULL"),
+        ("uq_content_link_list_event", ["family_id", "list_id", "event_id"], "list_id IS NOT NULL AND event_id IS NOT NULL"),
+    )
+    for name, columns, predicate in indexes:
+        where = sa.text(predicate)
+        op.create_index(name, "content_links", columns, unique=True, postgresql_where=where, sqlite_where=where)
 
 
 def downgrade() -> None:
