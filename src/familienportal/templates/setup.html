@@ -2,20 +2,19 @@
 {% block title %}Ersteinrichtung · Familienportal{% endblock %}
 {% block content %}
 <div class="row justify-content-center py-4"><div class="col-xl-7 col-lg-8">
-  <div class="text-center mb-4"><div class="hero-icon"><i class="bi bi-house-heart"></i></div><h1 class="h2 mt-3">Familienportal einrichten</h1><p class="text-secondary">Lege den ersten Familienbereich, Haushalt und Administrator an.</p></div>
-  <form method="post" class="card border-0 shadow-sm"><div class="card-body p-4 p-lg-5">
+  <div class="text-center mb-4"><div class="hero-icon"><i class="bi bi-house-heart"></i></div><h1 class="h2 mt-3">Familienportal einrichten</h1><p class="text-secondary">Lege den ersten Familienbereich, Haushalt und Administrator an. Der Assistent ist danach gesperrt.</p></div>
+  <form method="post" action="/setup" class="card border-0 shadow-sm"><div class="card-body p-4 p-lg-5">
     <h2 class="h5 mb-3">Familie</h2>
     <div class="row g-3">
-      <div class="col-md-8"><label class="form-label">Name der Familie</label><input class="form-control" name="family_name" placeholder="Familie Mustermann" required></div>
-      <div class="col-md-4"><label class="form-label">Kurzname</label><input class="form-control" name="family_slug" pattern="[a-z0-9-]+" placeholder="mustermann" required></div>
-      <div class="col-md-7"><label class="form-label">Erster Haushalt</label><input class="form-control" name="household_name" value="Haupthaushalt" required></div>
+      <div class="col-md-7"><label class="form-label">Name der Familie</label><input class="form-control" name="family_name" placeholder="Familie Mustermann" maxlength="160" required></div>
       <div class="col-md-5"><label class="form-label">Profil</label><select class="form-select" name="profile"><option value="small_family">Kleinfamilie</option><option value="extended_family">Großfamilie</option></select></div>
+      <div class="col-12"><label class="form-label">Erster Haushalt</label><input class="form-control" name="household_name" value="Zuhause" maxlength="160" required></div>
     </div>
     <hr class="my-4"><h2 class="h5 mb-3">Administrator</h2>
     <div class="row g-3">
-      <div class="col-md-6"><label class="form-label">Anzeigename</label><input class="form-control" name="admin_name" required></div>
-      <div class="col-md-6"><label class="form-label">E-Mail-Adresse</label><input class="form-control" type="email" name="admin_email" required></div>
-      <div class="col-12"><label class="form-label">Passwort</label><input class="form-control" type="password" name="admin_password" minlength="10" required><div class="form-text">Mindestens 10 Zeichen.</div></div>
+      <div class="col-md-6"><label class="form-label">Anzeigename</label><input class="form-control" name="admin_name" maxlength="160" required></div>
+      <div class="col-md-6"><label class="form-label">E-Mail-Adresse</label><input class="form-control" type="email" name="admin_email" maxlength="320" required></div>
+      <div class="col-12"><label class="form-label">Passwort</label><input class="form-control" type="password" name="password" minlength="10" autocomplete="new-password" required><div class="form-text">Mindestens 10 Zeichen.</div></div>
     </div>
     <button class="btn btn-primary btn-lg w-100 mt-4">Portal einrichten</button>
   </div></form>
