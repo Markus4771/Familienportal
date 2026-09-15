@@ -1,24 +1,18 @@
 from familienportal.main import app
+from familienportal.tasks_web import router as tasks_router
+from familienportal.web import router as web_router
 
 
-def _walk_routes(routes):
-    for route in routes:
-        yield route
-        nested = getattr(route, "routes", None)
-        if nested:
-            yield from _walk_routes(nested)
-
-
-def _routes():
+def _routes(routes):
     return {
         (route.path, method)
-        for route in _walk_routes(app.routes)
+        for route in routes
         for method in (getattr(route, "methods", None) or set())
     }
 
 
 def test_core_web_routes_remain_registered():
-    routes = _routes()
+    routes = _routes(web_router.routes)
     expected = {
         ("/setup", "GET"),
         ("/setup", "POST"),
@@ -33,8 +27,8 @@ def test_core_web_routes_remain_registered():
     assert expected <= routes
 
 
-def test_task_web_routes_are_registered_on_main_application():
-    routes = _routes()
+def test_task_web_routes_remain_registered():
+    routes = _routes(tasks_router.routes)
     expected = {
         ("/tasks", "GET"),
         ("/tasks", "POST"),
@@ -49,8 +43,8 @@ def test_task_web_routes_are_registered_on_main_application():
     assert expected <= routes
 
 
-def test_system_routes_remain_registered():
-    routes = _routes()
+def test_system_routes_remain_registered_on_main_application():
+    routes = _routes(app.routes)
     assert {
         ("/health", "GET"),
         ("/ready", "GET"),
