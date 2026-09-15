@@ -11,7 +11,7 @@ from familienportal.models import Household,User,UserStatus
 from familienportal.task_audit import audit_task
 from familienportal.task_filters import filter_tasks,presentation
 from familienportal.task_models import TaskStatus
-from familienportal.task_permissions import can_complete_task,can_create_task,can_delete_task,can_edit_task,can_read_task,can_set_assignee,visible_tasks
+from familienportal.task_permissions import can_complete_task,can_create_task,can_delete_task,can_edit_task,can_permanently_delete_task,can_read_task,can_set_assignee,visible_tasks
 from familienportal.task_service import TaskValidationError,archive_task,create_task,delete_task,get_task,list_tasks,restore_task,set_status,update_task
 router=APIRouter(include_in_schema=False);templates=Jinja2Templates(directory="src/familienportal/templates")
 def _user(request,db):
@@ -38,7 +38,7 @@ def tasks_page(request:Request,view:str="mine",assignee:str="",household:str="",
  elif view=="overdue":tasks=[i for i in tasks if i.status not in {TaskStatus.DONE.value,TaskStatus.CANCELLED.value} and i.due_at and i.due_at.replace(tzinfo=i.due_at.tzinfo or timezone.utc)<now]
  elif view not in {"family","archive"}:raise HTTPException(400,"Ungültige Ansicht")
  tasks=filter_tasks(tasks,assignee_id=_uuid(assignee),household_id=_uuid(household),priority=priority or None,due=due or None,now=now);users,households=_choices(db,user.family_id);flags={str(i.id):presentation(i,now) for i in tasks}
- return templates.TemplateResponse(request=request,name="tasks.html",context={"user":user,"is_admin":user.is_superadmin,"tasks":tasks,"view":view,"users":users,"households":households,"can_create":can_create_task(user),"TaskStatus":TaskStatus,"flags":flags,"filters":{"assignee":assignee,"household":household,"priority":priority,"due":due}})
+ return templates.TemplateResponse(request=request,name="tasks.html",context={"user":user,"is_admin":user.is_superadmin,"tasks":tasks,"view":view,"users":users,"households":households,"can_create":can_create_task(user),"can_permanently_delete_task":can_permanently_delete_task,"TaskStatus":TaskStatus,"flags":flags,"filters":{"assignee":assignee,"household":household,"priority":priority,"due":due}})
 @router.post("/tasks")
 def task_create(request:Request,title:str=Form(...),description:str=Form(""),assignee_user_id:str=Form(""),household_id:str=Form(""),priority:str=Form("normal"),due_at:str=Form(""),is_private:bool=Form(False),db:Session=Depends(get_db)):
  user=_user(request,db)
@@ -85,5 +85,7 @@ def task_restore(request:Request,task_id:UUID,db:Session=Depends(get_db)):
 @router.post("/tasks/{task_id}/delete")
 def task_delete(request:Request,task_id:UUID,db:Session=Depends(get_db)):
  user=_user(request,db);task=get_task(db,user.family_id,task_id)
- if not task or not can_delete_task(user,task):raise HTTPException(404,"Aufgabe nicht gefunden")
+ if not task:raise HTTPException(404,"Aufgabe nicht gefunden")
+ if not can_permanently_delete_task(user,task):raise HTTPException(403,"Endgültiges Löschen erfordert Aufgabenverwaltung")
+ if task.archived_at is None:raise HTTPException(409,"Aufgabe muss vor dem endgültigen Löschen archiviert werden")
  audit_task(db,"task.deleted",user,task);db.flush();delete_task(db,task);return RedirectResponse("/tasks?view=archive",303)
