@@ -54,6 +54,6 @@ def readiness():
 @app.get("/api/v1/system/runtime",tags=["system"])
 async def runtime(request:Request): return {"public_url":settings.public_url,"request_scheme":request.url.scheme,"request_host":request.url.hostname,"client":request.client.host if request.client else None,"secure_cookies":settings.secure_cookies,"trusted_hosts":settings.trusted_hosts,"database_backend":settings.database_backend}
 @app.get("/api/v1/system/capabilities",tags=["system"])
-async def capabilities(): return {"profiles":["small_family","extended_family"],"extension_types":["module","connector"],"core":["families","households","users","roles","sessions","audit","platform_management","first_run_setup","system_diagnostics"],"connectors":["nextcloud","mailcow","gramps","homeassistant","paperless","immich"],"modules":["calendar","tasks","notes","lists","news","marketplace","support","genealogy","documents"]}
+async def capabilities(): return {"profiles":["small_family","extended_family"],"extension_types":["module","connector"],"core":["families","households","users","roles","sessions","audit","security","platform_management","first_run_setup","system_diagnostics"],"connectors":["nextcloud","mailcow","gramps","homeassistant","paperless","immich"],"modules":["calendar","tasks","notes","lists","news","marketplace","support","genealogy","documents"]}
 @app.exception_handler(404)
 async def not_found(request:Request,exc:Exception): return {"detail":"Not found"}
