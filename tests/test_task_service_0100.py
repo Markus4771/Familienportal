@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from unittest.mock import patch
 
 import pytest
 
@@ -24,11 +25,13 @@ def task():
 def test_set_done_sets_completion_time():
     db = FakeDb()
     item = task()
-    set_status(db, item, TaskStatus.DONE.value)
+    with patch("familienportal.task_service.sync_task_event") as sync:
+        set_status(db, item, TaskStatus.DONE.value)
     assert item.status == TaskStatus.DONE.value
     assert item.completed_at is not None
     assert item.completed_at.tzinfo is not None
     assert db.commits == 1
+    sync.assert_called_once_with(db, item)
 
 
 def test_reopen_clears_completion_time():
@@ -36,9 +39,11 @@ def test_reopen_clears_completion_time():
     item = task()
     item.status = TaskStatus.DONE.value
     item.completed_at = datetime.now(timezone.utc)
-    set_status(db, item, TaskStatus.OPEN.value)
+    with patch("familienportal.task_service.sync_task_event") as sync:
+        set_status(db, item, TaskStatus.OPEN.value)
     assert item.status == TaskStatus.OPEN.value
     assert item.completed_at is None
+    sync.assert_called_once_with(db, item)
 
 
 def test_invalid_status_is_rejected():
