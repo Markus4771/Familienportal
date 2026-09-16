@@ -5,6 +5,7 @@ import logging
 from sqlalchemy import select
 
 from familienportal.database import SessionLocal
+from familienportal.genealogy_privacy import is_living, privacy_policy
 from familienportal.gramps import GrampsError
 from familienportal.gramps_calendar_sync import sync_gramps_calendar
 from familienportal.gramps_web import _client
@@ -20,6 +21,11 @@ def run_once() -> dict[str, int]:
         for state in states:
             try:
                 people = _client(state).all_people()
+                mode, age = privacy_policy(db, state.family_id)
+                # Shared calendars cannot evaluate the viewer's role. Never publish
+                # birthdays/details of living persons unless a later calendar ACL
+                # implementation can enforce genealogy.living.read per viewer.
+                people = [person for person in people if not is_living(person, age)]
                 result = sync_gramps_calendar(db, state.family_id, people)
                 totals["families"] += 1
                 for key in ("created", "updated", "deleted", "unchanged"):
