@@ -2,6 +2,19 @@
 
 Alle wesentlichen Änderungen am Familienportal werden in dieser Datei dokumentiert.
 
+## 0.13.1 – 2026-09-18
+
+### Härtung und Release-Vorbereitung
+- First-Run-Setup erzwingt die Passwort-Mindestlänge von 10 Zeichen nun auch serverseitig.
+- Leere Pflichtfelder für Familienname, Administratorname und E-Mail werden serverseitig abgewiesen.
+- Regressionstests für die Setup-Validierung ergänzt.
+- Fehlende `security`-Capability in der System-Capability-API wiederhergestellt.
+- Versionsstand in Paketmetadaten und Python-Paket auf 0.13.1 angehoben.
+
+### Noch offen vor Stable
+- Automatischen GitHub-Release um Bau und Upload von `familienportal_0.13.1_all.deb` und Prüfsummen erweitern.
+- Debian-13-Praxistest mit Paketinstallation, systemd, Setup, Login, Diagnose, Backup/Restore sowie Update/Rollback durchführen.
+
 ## 0.13.0 – 2026-09-15
 
 ### Produktivbetrieb I

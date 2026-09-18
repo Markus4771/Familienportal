@@ -1,31 +1,36 @@
 # Familienportal - Übergabe für neuen Chat
 
-Stand: 15.09.2026
+Stand: 18.09.2026
 
 ## Aktueller Stand
 
 Stable: 0.13.0 - Produktivbetrieb I
-Tag: v0.13.0
-Stable-Commit: 4c7745f7c965fea8432f55a814ad26fe0230dbde
-CI #408: erfolgreich.
+In Vorbereitung: 0.13.1 - Härtung und Release-Vorbereitung
+Letzter gemergter Fix-Commit auf main: 00e68e071f70996ae07695bfb3e19806901e9b60
+PR #3 wurde erfolgreich gemergt.
+CI #410 für PR #3: erfolgreich.
 
 Das Familienportal ist eine modulare Plattform für kleine und große Familien. Technik: FastAPI, Jinja2, Bootstrap/HTMX, SQLAlchemy/Alembic, SQLite/PostgreSQL, Debian 13, systemd. Externe Dienste wie Nextcloud, Mailcow, Home Assistant, Paperless und Gramps Web sollen integriert statt ersetzt werden.
 
-## In 0.13.0 umgesetzt
+## In 0.13.1 bereits umgesetzt
 
-Debian-Installer, Grundlage für Debian-Paket, Browser-Setup-Assistent, Update-System, Backup/Restore, Integrationsassistent, mobile Oberfläche, neues Dashboard, Systemdiagnose und erweiterte CI.
+- First-Run-Setup prüft die Passwort-Mindestlänge von 10 Zeichen jetzt auch serverseitig.
+- Leere Pflichtfelder im Setup werden serverseitig abgewiesen.
+- Regressionstests für die Setup-Validierung sind vorhanden.
+- Die fehlende `security`-Capability wurde wieder ergänzt.
+- Versionsnummer in Python-Paket und `pyproject.toml` auf 0.13.1 angehoben.
+- Changelog für 0.13.1 ergänzt.
 
 ## Nächster Schritt
 
-Der GitHub-Release v0.13.0 ist veröffentlicht. Beim letzten Check enthielt er noch kein Release-Asset. Das vorgesehene Paket `familienportal_0.13.0_all.deb` fehlt noch.
+Der GitHub-Release `v0.13.0` enthält weiterhin kein Release-Asset. Der bisherige Workflow erzeugt nur ein Quellarchiv und ruft `packaging/build_deb.sh` nicht auf.
 
-Als Erstes daher `.github/workflows/release.yml` und `packaging/build_deb.sh` prüfen, den automatischen Debian-Paket-Release vervollständigen und das 0.13.0-Paket bereitstellen.
+Als Erstes daher `.github/workflows/release.yml` so erweitern, dass beim Tag-Release zusätzlich `familienportal_<version>_all.deb` und SHA256-Prüfsummen erzeugt und an den Release angehängt werden.
 
-Danach auf einem frischen Debian 13 einen Praxistest durchführen: Paketinstallation, systemd, First-Run-Setup, Login, Dashboard, Systemdiagnose, Backup, Restore sowie Update/Rollback testen.
+Danach 0.13.1 als Release-Kandidat fertigstellen und auf einem frischen Debian 13 praktisch testen: Paketinstallation, systemd, First-Run-Setup, Login, Dashboard, Systemdiagnose, Backup, Restore sowie Update/Rollback.
 
 ## Bekannte Nacharbeiten
 
-- `src/familienportal/main.py` auf verlorene Capability-Einträge für Nextcloud, Mailcow, Kalender und Security prüfen.
 - Dashboard-Schnellaktionen für Aufgaben prüfen.
 - Rechteprüfung der Task- und Kalender-Aktionen kontrollieren.
 - Listen-Bearbeiten und Verschieben/Sortieren in der GUI prüfen.
@@ -33,7 +38,6 @@ Danach auf einem frischen Debian 13 einen Praxistest durchführen: Paketinstalla
 - Migration 0023 auf historische Duplikate prüfen.
 - zusätzliche Berechtigungs-, Rollback- und Audit-Tests ergänzen.
 - mobile Navigation an Rechte und aktive Module koppeln.
-- Passwort-Mindestlänge im Setup serverseitig prüfen.
 - Integrations-URLs sicher validieren und später authentifizierte Connector-Tests ergänzen.
 - Release-Updater um sauberen Rollback bei Fehlern erweitern.
 - CI-Importprüfung wieder auf alle relevanten Module erweitern.
@@ -47,7 +51,7 @@ Danach auf einem frischen Debian 13 einen Praxistest durchführen: Paketinstalla
 
 Zuerst diese Datei lesen. Danach immer den aktuellen GitHub-Stand, aktuellen HEAD, CI und Release-Assets prüfen, da das Repository neuer als diese Übergabe sein kann. Bei Abweichungen gilt der neuere verifizierte GitHub-Stand.
 
-Die Entwicklung soll direkt im Repository fortgeführt werden, wenn der Benutzer die Umsetzung bestätigt. Zuerst den fehlenden Debian-Paket-Releaseweg abschließen, danach den Debian-13-Praxistest. Anschließend eine Roadmap für 0.14.0 erstellen.
+Die Entwicklung soll direkt im Repository fortgeführt werden, wenn der Benutzer die Umsetzung bestätigt. Zuerst den Debian-Paket-Releaseweg abschließen, danach den Debian-13-Praxistest. Anschließend die verbleibenden 0.13.1-Nacharbeiten abschließen und eine Roadmap für 0.14.0 erstellen.
 
 Starttext für einen neuen Chat:
 
