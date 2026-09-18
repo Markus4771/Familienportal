@@ -30,7 +30,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e '.[dev]'
           pytest
-          bash -n deploy/install.sh deploy/release-install.sh deploy/familienportalctl deploy/familienportal-release
+          bash -n deploy/install.sh deploy/release-install.sh deploy/familienportalctl deploy/familienportal-release packaging/build_deb.sh
 
       - name: Build source archive
         run: |
@@ -53,6 +53,13 @@ jobs:
           printf '%s\n' "$RELEASE_VERSION" > release-src/VERSION
           tar -C release-src -czf "dist/familienportal-${GITHUB_REF_NAME}.tar.gz" .
           sha256sum "dist/familienportal-${GITHUB_REF_NAME}.tar.gz" > "dist/familienportal-${GITHUB_REF_NAME}.tar.gz.sha256"
+
+      - name: Build Debian package
+        run: |
+          RELEASE_VERSION="${GITHUB_REF_NAME#v}"
+          FAMILIENPORTAL_DEB_VERSION="$RELEASE_VERSION" FAMILIENPORTAL_DEB_ARCH=all bash packaging/build_deb.sh
+          test -s "dist/familienportal_${RELEASE_VERSION}_all.deb"
+          sha256sum "dist/familienportal_${RELEASE_VERSION}_all.deb" > "dist/familienportal_${RELEASE_VERSION}_all.deb.sha256"
 
       - name: Create GitHub release
         env:
